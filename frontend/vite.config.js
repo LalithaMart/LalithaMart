@@ -18,24 +18,6 @@ export default defineConfig({
     }
   },
   build: {
-    rollupOptions: {
-      output: {
-        manualChunks(id) {
-          if (id.includes('node_modules')) {
-            if (id.includes('react') || id.includes('react-dom') || id.includes('react-router')) {
-              return 'vendor-react';
-            }
-            if (id.includes('framer-motion')) {
-              return 'vendor-framer';
-            }
-            if (id.includes('leaflet') || id.includes('react-leaflet')) {
-              return 'vendor-maps';
-            }
-            return 'vendor'; // all other node_modules
-          }
-        }
-      }
-    },
     chunkSizeWarningLimit: 1000
   }
 })
