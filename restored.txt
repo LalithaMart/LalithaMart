@@ -1,0 +1,80 @@
+import { useLocation, useNavigate } from 'react-router-dom';\r
+  const [products, setProducts] = useState([]);\r
+  const [categories, setCategories] = useState([]);\r
+  const [loading, setLoading] = useState(true);\r
+  const [showForm, setShowForm] = useState(false);\r
+  const [searchTerm, setSearchTerm] = useState('');\r
+  const [editingId, setEditingId] = useState(null);\r
+  const [stats, setStats] = useState({ totalProducts: 0, availableStock: 0, outOfStockCount: 0, lowStockCount: 0 });\r
+  \r
+  const { showToast } = useUIStore();\r
+  const location = useLocation();\r
+  const navigate = useNavigate();\r
+\r
+  const [fullscreenImages, setFullscreenImages] = useState([]);\r
+  const [fullscreenIndex, setFullscreenIndex] = useState(0);\r
+\r
+  const openFullscreen = (images, index) => {\r
+    setFullscreenImages(images);\r
+    setFullscreenIndex(index);\r
+  };\r
+\r
+  const nextImage = (e) => {\r
+    e.stopPropagation();\r
+    setFullscreenIndex((prev) => (prev + 1) % fullscreenImages.length);\r
+  };\r
+\r
+  const prevImage = (e) => {\r
+    e.stopPropagation();\r
+    setFullscreenIndex((prev) => (prev - 1 + fullscreenImages.length) % fullscreenImages.length);\r
+  };\r
+\r
+  const [formData, setFormData] = useState({ \r
+    name: '', \r
+    price: '', \r
+    d
+        data.append('images', formData.images[i]);\r
+      }\r
+    }\r
+\r
+    try {\r
+      if (editingId) {\r
+        await api.put(`/products/${editingId}`, data);\r
+      } else {\r
+        await api.post('/products', data);\r
+      }\r
+      setShowForm(false);\r
+      setEditingId(null);\r
+      setFormData({ name: '', price: '', discountPrice: '', unit: 'pcs', sku: '', description: '', category: categories[0]?._id, stock: '', priority: 0, images: null });\r
+      fetchData();\r
+      showToast('Product saved successfully', 'success');\r
+    } catch (error) {\r
+      console.error(error);\r
+      showToast('Failed to save product: ' + (error.response?.data?.message || error.message), 'error');\r
+    }\r
+  };\r
+\r
+  const handleEditClick = (product) => {\r
+    setFormData({ \r
+      name: product.name, \r
+      price: product.price, \r
+      discountPrice: product.discountPrice || '',\r
+      unit: product.unit || 'pcs',\r
+      sku: product.sku || '',\r
+      description: product.description, \r
+      category: product.category._id, \r
+      stock: product.stock, \r
+      priority: product.priority || 0,\r
+      images: null,\r
+      imagesPreview: product.images\r
+    });\r
+    setEditingId(product._id);\r
+    setShowForm(true);\r
+  };\r
+\r
+  const handleCancel = () => {\r
+    setShowForm(false);\r
+    setEditingId(null);\r
+    setFormData({ name: '', price: '', discountPrice: '', unit: 'pcs', sku: '', description: '', category: categories[0]?._id, stock: '', priority: 0, images: null });\r
+    if (location.search.includes('edit=')) {\r
+      navigate('/admin/products', { replace: true });\r

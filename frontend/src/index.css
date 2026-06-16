@@ -1,0 +1,63 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-gray-50 dark:bg-dark-900 text-gray-900 dark:text-white transition-colors duration-300;
+    -webkit-tap-highlight-color: transparent;
+  }
+  
+  input, textarea, select {
+    @apply bg-white dark:bg-dark-900 text-gray-900 dark:text-white border-gray-200 dark:border-dark-700;
+  }
+  
+  .dark body {
+    background-color: #0f172a;
+    color: #f3f4f6;
+  }
+}
+
+@layer utilities {
+  .scrollbar-hide {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  
+  .glass {
+    @apply bg-white/70 backdrop-blur-md border border-white/20;
+    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+  }
+  .dark .glass {
+    @apply backdrop-blur-md;
+    background-color: rgba(30, 41, 59, 0.7);
+    border: 1px solid #475569;
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+  }
+}
+
+/* Custom Scrollbar for desktop */
+@media (min-width: 768px) {
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-gray-300 rounded-full;
+  }
+  .dark ::-webkit-scrollbar-thumb {
+    background-color: #475569;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-gray-400;
+  }
+  .dark ::-webkit-scrollbar-thumb:hover {
+    background-color: #64748b;
+  }
+}

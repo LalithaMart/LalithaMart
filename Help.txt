@@ -1,0 +1,8 @@
+cd "e:\Lalitha Mart\frontend" --> npm run dev
+cd "e:\Lalitha Mart\backend" --> npm run dev
+
+http://localhost:3000
+
+admin - 9999999999 - admin123
+delivery partner - 7894561230 - 123
+customer - 123456789 - 123

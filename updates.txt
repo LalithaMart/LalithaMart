@@ -1,0 +1,29 @@
+0. if a category is selected only the products in that category should be visible.
+1. provide an option for delivery partner to cancel the delivery assigned to him. after cancellation admin should me notified with sound and a message on screen so that he can reassign to someone else.
+2. delivery partner should also be able to see all the items in the order. including complete product details.
+3. delivery log history should be date wise, today's first
+4. order history should be date wise, today's first.
+5. for delivery partner show total earnings as well as today's earnings
+6. for deliver partner before entering the otp provide an option whether the customer wants to pay through cash/upi. if selected upi then show qr.
+7. for delivery partner show total amount collected through upi and through cash in a particular day. show the same in admin portal aswell.
+8. in dashboard there should orders should be date wise. filter for dates as well. graph should also be modified based on selection
+9. in dashboard there should be a filter to check customer wise orders. graph should also be modified based on selection
+10. in dashboard there should be a filter to check orders based on the product as well. graph should also be modified based on selection
+11. there should be a search bar to search customers and delivery partners for admin.
+12. in admin portal provide a search bar in category section as well.
+13. priority no should be unique for categories. also add unique(can be same if it belongs to another category) priority no to each and every product in a particular category.
+14. products & categories should be visible to customer based on their priority.
+15. products should also be displayed category wise in admin portal
+
+
+1. cash that need to be collected from delivery partner.
+2. Contact details tab for admin in which he can add / edit his contact details (mail, Phone no, address, location of the store marked in map, and all other details that are needed)
+3. Contact Us tab for customers and for delivery partner. here the contact details added by the admin should be visible. (only mail, location, address). can be messaged directly from the contact us tab
+4. when clicked on track order in customer's order history tab navigation from the address added by the admin/store to the customers added should be displayed.
+5. wishlist
+
+6. chatbot/ai agent everywhere
+7. if tried to add more quantity than present in the stock customer should get message that we only have this much now. if an item gets out of stock image of the product should be covered in white transparent coulor on which out of stock is written and disable add to cart button for that.
+
+
+out of stock notification is not opening that respective product details. even when the new order was assigned to a delivery partner and when clicked on that respective new order notification its not showing that the order was already assigned. ( it should show the view/assign tab of that order only), if tried to add more quantity than present in the stock customer should get message that we only have this much now. when clicked on notify button its not changing the button (its working but button is not changing to alert set button/ unset button). for customers and partners when clicked on a particular order in order history, it should maximize that particular order details only. and notifications related to these orders also should open this only. partner notification not opening
