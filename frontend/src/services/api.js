@@ -1,8 +1,9 @@
 import axios from 'axios';
 import { useAuthStore } from '../store/authStore';
 
+const backendUrl = import.meta.env.VITE_BACKEND_URL || '';
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || '/api',
+  baseURL: backendUrl ? `${backendUrl}/api` : '/api',
 });
 
 // Request interceptor to add the auth token header to requests

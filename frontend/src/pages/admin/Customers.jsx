@@ -107,7 +107,7 @@ const Customers = () => {
           <h3 className="font-bold text-gray-800 dark:text-gray-100 text-lg border-b pb-2">Add New Customer</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <input type="text" placeholder="Name" required className="px-4 py-2 border dark:border-dark-600 bg-white dark:bg-dark-900 text-gray-900 dark:text-white rounded-lg" value={newCustomer.name} onChange={e => setNewCustomer({...newCustomer, name: e.target.value})} />
-            <input type="text" placeholder="Phone" required className="px-4 py-2 border dark:border-dark-600 bg-white dark:bg-dark-900 text-gray-900 dark:text-white rounded-lg" value={newCustomer.phone} onChange={e => setNewCustomer({...newCustomer, phone: e.target.value})} />
+            <input type="text" placeholder="Phone" pattern="\d{10}" maxLength="10" required className="px-4 py-2 border dark:border-dark-600 bg-white dark:bg-dark-900 text-gray-900 dark:text-white rounded-lg" value={newCustomer.phone} onChange={e => setNewCustomer({...newCustomer, phone: e.target.value.replace(/\D/g, '')})} />
             <input type="password" placeholder="Password" required className="px-4 py-2 border dark:border-dark-600 bg-white dark:bg-dark-900 text-gray-900 dark:text-white rounded-lg" value={newCustomer.password} onChange={e => setNewCustomer({...newCustomer, password: e.target.value})} />
           </div>
           <div className="flex justify-end space-x-2 pt-2">
@@ -234,9 +234,11 @@ const Customers = () => {
                     <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Phone</label>
                     <input 
                       type="text" 
+                      pattern="\d{10}"
+                      maxLength="10"
                       className="w-full px-3 py-2 border dark:border-dark-600 bg-white dark:bg-dark-900 text-gray-900 dark:text-white rounded-lg text-sm"
                       value={selectedCustomer.phone}
-                      onChange={(e) => setSelectedCustomer({...selectedCustomer, phone: e.target.value})}
+                      onChange={(e) => setSelectedCustomer({...selectedCustomer, phone: e.target.value.replace(/\D/g, '')})}
                     />
                   </div>
                   <div>

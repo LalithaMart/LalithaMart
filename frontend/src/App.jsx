@@ -84,7 +84,7 @@ function App() {
             <Route path="/" element={<MainLayout />}>
               <Route index element={<Home />} />
               <Route path="product/:id" element={<ProductDetails />} />
-              <Route path="login" element={<Login targetRole="customer" />} />
+              <Route path="login" element={<Login />} />
               <Route path="register" element={<Register />} />
               <Route path="forgot-password" element={<ForgotPassword />} />
               <Route path="cart" element={<Cart />} />
@@ -95,13 +95,11 @@ function App() {
               <Route path="contact" element={<ContactUs />} />
             </Route>
 
-            {/* Separate Login Routes */}
-            <Route path="/admin/login" element={<Login targetRole="admin" />} />
-            <Route path="/delivery/login" element={<Login targetRole="delivery" />} />
+            {/* Separate Register Routes */}
             <Route path="/delivery/register" element={<Register targetRole="delivery" />} />
 
             {/* Admin Routes */}
-            <Route path="/admin" element={isAdmin ? <AdminLayout /> : <Navigate to="/admin/login" />}>
+            <Route path="/admin" element={isAdmin ? <AdminLayout /> : <Navigate to="/login" />}>
               <Route index element={<AdminDashboard />} />
               <Route path="orders" element={<AdminOrders />} />
               <Route path="categories" element={<Categories />} />
@@ -114,7 +112,7 @@ function App() {
             </Route>
 
             {/* Delivery Partner Routes */}
-            <Route path="/delivery" element={user?.role === 'delivery' || isAdmin ? <DeliveryLayout /> : <Navigate to="/delivery/login" />}>
+            <Route path="/delivery" element={user?.role === 'delivery' || isAdmin ? <DeliveryLayout /> : <Navigate to="/login" />}>
               <Route index element={<DeliveryDashboard />} />
               <Route path="history" element={<DeliveryHistory />} />
               <Route path="profile" element={<DeliveryProfile />} />

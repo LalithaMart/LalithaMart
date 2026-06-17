@@ -327,7 +327,7 @@ const Profile = () => {
                 </div>
                 <div>
                   <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Phone Number</label>
-                  <input type="text" required className="w-full px-4 py-3 bg-white dark:bg-dark-800 border-2 border-gray-200 dark:border-dark-700 rounded-xl focus:ring-4 focus:ring-primary-500/20 focus:border-primary-500 font-medium text-gray-900 dark:text-white transition-all" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} />
+                  <input type="text" pattern="\d{10}" maxLength="10" required className="w-full px-4 py-3 bg-white dark:bg-dark-800 border-2 border-gray-200 dark:border-dark-700 rounded-xl focus:ring-4 focus:ring-primary-500/20 focus:border-primary-500 font-medium text-gray-900 dark:text-white transition-all" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value.replace(/\D/g, '')})} />
                 </div>
                 <div className="md:col-span-2">
                   <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">New Password <span className="text-gray-400 dark:text-gray-500 font-medium ml-1">(Leave blank to keep current)</span></label>

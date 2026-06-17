@@ -4,7 +4,7 @@ import { useAuthStore } from '../store/authStore';
 import api from '../services/api';
 import { Eye, EyeOff } from 'lucide-react';
 
-const Login = ({ targetRole = 'customer' }) => {
+const Login = () => {
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -53,12 +53,7 @@ const Login = ({ targetRole = 'customer' }) => {
     try {
       const response = await api.post('/auth/login', { loginId, password });
       
-      // Strict role validation
-      if (response.data.role !== targetRole) {
-        setError(`Invalid credentials for ${targetRole} portal.`);
-        setLoading(false);
-        return;
-      }
+
 
       setCredentials(response.data, response.data.token);
       
@@ -77,15 +72,8 @@ const Login = ({ targetRole = 'customer' }) => {
     }
   };
 
-  const getTitle = () => {
-    if (targetRole === 'admin') return 'Admin Portal Login';
-    if (targetRole === 'delivery') return 'Delivery Partner Login';
-    return 'Welcome Back';
-  };
-
-  return (
     <div className="max-w-md mx-auto mt-16 bg-white dark:bg-dark-800 p-8 rounded-xl shadow-sm border border-gray-100 dark:border-dark-700 transition-colors">
-      <h2 className="text-2xl font-bold text-center text-gray-800 dark:text-white mb-8">{getTitle()}</h2>
+      <h2 className="text-2xl font-bold text-center text-gray-800 dark:text-white mb-8">Welcome Back</h2>
       
       {error && <div className="bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 p-3 rounded-lg mb-6 text-sm">{error}</div>}
       
@@ -94,6 +82,8 @@ const Login = ({ targetRole = 'customer' }) => {
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Phone Number</label>
           <input
             type="text"
+            pattern="\d{10}"
+            maxLength="10"
             className="w-full px-4 py-2 bg-white dark:bg-dark-900 border border-gray-300 dark:border-dark-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition text-gray-900 dark:text-white"
             placeholder="Enter your 10-digit phone number"
             value={phone}
@@ -166,43 +156,14 @@ const Login = ({ targetRole = 'customer' }) => {
         </button>
       </form>
 
-      {targetRole === 'customer' ? (
-        <div className="mt-6 text-center space-y-3">
-          <p className="text-sm text-gray-600 dark:text-gray-400">
-            Don't have an account?{' '}
-            <Link to="/register" className="text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 font-medium">
-              Sign up
-            </Link>
-          </p>
-          <p className="text-sm">
-            <Link to="/delivery/login" className="text-gray-500 dark:text-gray-500 hover:text-gray-800 dark:hover:text-gray-300 font-medium transition">
-              Login as Delivery Agent &rarr;
-            </Link>
-          </p>
-        </div>
-      ) : targetRole === 'delivery' ? (
-        <div className="mt-6 text-center space-y-3">
-          <p className="text-sm text-gray-600 dark:text-gray-400">
-            Want to join our fleet?{' '}
-            <Link to="/delivery/register" className="text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 font-medium">
-              Sign up as Delivery Agent
-            </Link>
-          </p>
-          <p className="text-sm">
-            <Link to="/login" className="text-gray-500 dark:text-gray-500 hover:text-gray-800 dark:hover:text-gray-300 font-medium transition">
-              &larr; Login as Customer
-            </Link>
-          </p>
-        </div>
-      ) : (
-        <div className="mt-6 text-center">
-          <p className="text-sm">
-            <Link to="/login" className="text-gray-500 dark:text-gray-500 hover:text-gray-800 dark:hover:text-gray-300 font-medium transition">
-              &larr; Back to Main Portal
-            </Link>
-          </p>
-        </div>
-      )}
+      <div className="mt-6 text-center space-y-3">
+        <p className="text-sm text-gray-600 dark:text-gray-400">
+          Don't have an account?{' '}
+          <Link to="/register" className="text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 font-medium">
+            Sign up
+          </Link>
+        </p>
+      </div>
     </div>
   );
 };

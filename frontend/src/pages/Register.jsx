@@ -63,7 +63,7 @@ const Register = ({ targetRole = 'customer' }) => {
       {success && (
         <div className="bg-green-50 text-green-700 p-4 rounded-lg mb-6 text-sm flex flex-col gap-3 text-center">
           <p>{success}</p>
-          <Link to="/delivery/login" className="inline-block bg-green-600 text-white py-2 px-4 rounded hover:bg-green-700 transition">
+          <Link to="/login" className="inline-block bg-green-600 text-white py-2 px-4 rounded hover:bg-green-700 transition">
             Go to Login
           </Link>
         </div>
@@ -164,7 +164,7 @@ const Register = ({ targetRole = 'customer' }) => {
         <div className="mt-6 text-center space-y-3">
           <p className="text-sm text-gray-600 dark:text-gray-400">
             Already registered?{' '}
-            <Link to="/delivery/login" className="text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 font-medium">
+            <Link to="/login" className="text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 font-medium">
               Login as Delivery Agent
             </Link>
           </p>
