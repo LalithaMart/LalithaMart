@@ -56,7 +56,24 @@ function LocationPicker({ position, setPosition }) {
         }));
       });
     }
+  }, []); // Only initialize once
 
+  // Update map and marker when position changes externally
+  useEffect(() => {
+    if (mapInstance.current && position.location?.lat && position.location?.lng) {
+      const lat = position.location.lat;
+      const lng = position.location.lng;
+      mapInstance.current.setView([lat, lng], 16);
+      
+      if (markerInstance.current) {
+        markerInstance.current.setLatLng([lat, lng]);
+      } else {
+        markerInstance.current = L.marker([lat, lng]).addTo(mapInstance.current);
+      }
+    }
+  }, [position.location?.lat, position.location?.lng]);
+
+  useEffect(() => {
     return () => {
       if (mapInstance.current) {
         mapInstance.current.remove();
@@ -229,7 +246,40 @@ const Profile = () => {
       showToast('Address saved successfully', 'success');
     } catch (error) {
       console.error(error);
-      showToast('Failed to save address', 'error');
+      showToast('Failed to add address', 'error');
+    }
+  };
+
+  const handleUseCurrentLocation = () => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(async (position) => {
+        const { latitude, longitude } = position.coords;
+        setNewAddress(prev => ({ ...prev, location: { lat: latitude, lng: longitude } }));
+        
+        try {
+          const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`);
+          const data = await res.json();
+          if (data && data.address) {
+            setNewAddress(prev => ({
+              ...prev,
+              street: data.address.road || data.address.suburb || data.address.neighbourhood || prev.street,
+              city: data.address.city || data.address.town || data.address.village || data.address.county || prev.city,
+              state: data.address.state || prev.state,
+              postalCode: data.address.postcode || prev.postalCode,
+              location: { lat: latitude, lng: longitude }
+            }));
+            showToast('Location fetched and address autofilled', 'success');
+          }
+        } catch (error) {
+          console.error("Reverse geocoding failed", error);
+          showToast('Location pinned. Please fill the address manually.', 'success');
+        }
+      }, (error) => {
+        console.error(error);
+        showToast('Please enable location permissions in your browser', 'error');
+      });
+    } else {
+      showToast('Geolocation is not supported by this browser', 'error');
     }
   };
 
@@ -393,7 +443,12 @@ const Profile = () => {
               </div>
               
               <div className="mt-6">
-                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-3">Pin Location on Map</label>
+                <div className="flex justify-between items-center mb-3">
+                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-300">Pin Location on Map</label>
+                  <button type="button" onClick={handleUseCurrentLocation} className="text-sm font-bold text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 flex items-center bg-primary-50 dark:bg-primary-900/20 px-3 py-1.5 rounded-lg transition-colors">
+                    <MapPin size={14} className="mr-1" /> Use Current Location
+                  </button>
+                </div>
                 <div className="h-72 rounded-2xl overflow-hidden border-2 border-gray-200 dark:border-dark-700 relative z-0 shadow-inner">
                   <LocationPicker position={newAddress} setPosition={setNewAddress} />
                 </div>

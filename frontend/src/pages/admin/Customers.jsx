@@ -208,6 +208,24 @@ const Customers = () => {
             </div>
             
             <div className="p-6">
+              <div className="mb-6">
+                <button 
+                  onClick={async () => {
+                    try {
+                      const { data } = await api.post(`/auth/impersonate/${selectedCustomer._id}`);
+                      startImpersonating(data, data.token, user, token);
+                      showToast('Impersonating Customer', 'success');
+                      navigate('/');
+                    } catch (error) {
+                      console.error(error);
+                      showToast(error.response?.data?.message || 'Failed to impersonate', 'error');
+                    }
+                  }}
+                  className="w-full bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 font-bold py-3 rounded-xl hover:bg-blue-100 dark:hover:bg-blue-900/50 transition border border-blue-200 dark:border-blue-900/50"
+                >
+                  View Store as Customer
+                </button>
+              </div>
               <div className="flex items-center space-x-4 mb-6">
                 <div className="h-16 w-16 rounded-full bg-primary-100 text-primary-600 flex items-center justify-center text-3xl font-bold">
                   {selectedCustomer.name.charAt(0)}
@@ -268,25 +286,6 @@ const Customers = () => {
                     Save Changes
                   </button>
                 </div>
-              </div>
-
-              <div className="flex space-x-4 mb-6">
-                <button 
-                  onClick={async () => {
-                    try {
-                      const { data } = await api.post(`/auth/impersonate/${selectedCustomer._id}`);
-                      startImpersonating(data, data.token, user, token);
-                      showToast('Impersonating Customer', 'success');
-                      navigate('/');
-                    } catch (error) {
-                      console.error(error);
-                      showToast(error.response?.data?.message || 'Failed to impersonate', 'error');
-                    }
-                  }}
-                  className="w-full bg-blue-50 text-blue-600 font-bold py-2 rounded-xl hover:bg-blue-100 transition border dark:border-dark-600 bg-white dark:bg-dark-900 text-gray-900 dark:text-white border-blue-200"
-                >
-                  View Store as Customer
-                </button>
               </div>
 
               <div className="mb-6">

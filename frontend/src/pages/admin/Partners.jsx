@@ -345,6 +345,14 @@ const Partners = () => {
             </div>
             
             <div className="p-6">
+              <div className="mb-6">
+                <button 
+                  onClick={handleImpersonate}
+                  className="w-full bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 font-bold py-3 rounded-xl hover:bg-orange-200 dark:hover:bg-orange-900/50 transition border border-orange-200 dark:border-orange-900/50"
+                >
+                  View Dashboard as Partner
+                </button>
+              </div>
               <div className="flex items-center space-x-4 mb-6">
                 <div className="h-16 w-16 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center text-3xl font-bold">
                   {selectedPartner.name.charAt(0)}
@@ -431,16 +439,6 @@ const Partners = () => {
                   </button>
                 </div>
               </div>
-
-              <div className="flex space-x-4 mb-6">
-                <button 
-                  onClick={handleImpersonate}
-                  className="w-full bg-orange-100 text-orange-700 font-bold py-2 rounded-xl hover:bg-orange-200 transition border dark:border-dark-600 bg-white dark:bg-dark-900 text-gray-900 dark:text-white border-orange-200"
-                >
-                  View Dashboard as Partner
-                </button>
-              </div>
-
               <div>
                 <h4 className="font-bold text-gray-800 dark:text-gray-100 mb-3 flex items-center">
                   <Package size={18} className="mr-2 text-primary-600" /> Delivery History

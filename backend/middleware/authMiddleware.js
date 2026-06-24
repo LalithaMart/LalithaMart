@@ -37,7 +37,7 @@ const admin = (req, res, next) => {
 };
 
 const delivery = (req, res, next) => {
-  if (req.user && req.user.role === 'delivery') {
+  if (req.user && (req.user.role === 'delivery' || req.user.role === 'admin')) {
     next();
   } else {
     res.status(401).json({ message: 'Not authorized as a delivery partner' });

@@ -351,7 +351,7 @@ const assignDeliveryPartner = async (req, res) => {
         relatedId: updatedOrder._id,
         userId: partnerId,
         targetRole: 'specific',
-        link: `/delivery/dashboard?orderId=${updatedOrder._id}`
+        link: `/delivery?orderId=${updatedOrder._id}`
       });
       getIO().to(partnerId.toString()).emit('new-notification', dpNotif);
     } catch (e) {}

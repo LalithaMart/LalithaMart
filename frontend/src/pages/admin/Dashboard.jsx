@@ -314,11 +314,12 @@ const AdminDashboard = () => {
     });
   }, [orders, customerFilter, productFilter, dateFilter, fromDate, toDate]);
 
-  // Calculate dynamic stats
-  const dynamicTotalOrders = filteredOrders.length;
-  const dynamicRevenue = filteredOrders.reduce((acc, curr) => acc + curr.totalAmount, 0);
+  // Filter out cancelled orders for metrics and charts
+  const validOrders = useMemo(() => {
+    return filteredOrders.filter(o => o.status !== 'Cancelled');
+  }, [filteredOrders]);
 
-  // Group chart data from filtered orders
+  // Group chart data from valid orders
   const dynamicChartData = useMemo(() => {
     let minTime = Infinity;
     let maxTime = new Date().setHours(0,0,0,0);
@@ -344,7 +345,7 @@ const AdminDashboard = () => {
 
     if (minTime === Infinity || isNaN(minTime)) {
       minTime = Infinity;
-      filteredOrders.forEach(o => {
+      validOrders.forEach(o => {
         const t = new Date(o.createdAt).setHours(0,0,0,0);
         if (t < minTime) minTime = t;
       });
@@ -368,7 +369,7 @@ const AdminDashboard = () => {
       daysCount++;
     }
 
-    filteredOrders.forEach(o => {
+    validOrders.forEach(o => {
       const dString = new Date(o.createdAt).toLocaleDateString();
       if (groupedDataMap[dString]) {
         groupedDataMap[dString].orders += 1;
@@ -377,7 +378,11 @@ const AdminDashboard = () => {
     });
 
     return Object.values(groupedDataMap).sort((a, b) => a.timestamp - b.timestamp);
-  }, [filteredOrders, dateFilter, fromDate, toDate]);
+  }, [validOrders, dateFilter, fromDate, toDate]);
+
+  // Calculate dynamic stats
+  const dynamicTotalOrders = validOrders.length;
+  const dynamicRevenue = validOrders.reduce((acc, curr) => acc + curr.totalAmount, 0);
 
   if (loading) return <div className="flex justify-center p-8">Loading...</div>;
 

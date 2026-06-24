@@ -79,6 +79,8 @@ const updateCategory = async (req, res) => {
     
     if (req.file) {
       category.image = req.file.path;
+    } else if (req.body.existingImage === '' || req.body.existingImage === 'null') {
+      category.image = '';
     }
 
     const updatedCategory = await category.save();

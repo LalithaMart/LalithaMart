@@ -24,10 +24,6 @@ const MainLayout = () => {
     }
   }, [user, fetchCart]);
 
-  if (user?.role === 'delivery') {
-    return <Navigate to="/delivery" />;
-  }
-
   const handleLogout = () => {
     logout();
     navigate('/');
@@ -36,12 +32,17 @@ const MainLayout = () => {
   const cartCount = items.reduce((total, item) => total + item.quantity, 0);
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-dark-900 text-gray-900 dark:text-gray-100 transition-colors duration-300 pb-16 md:pb-0">
+    <div className="min-h-screen bg-gray-50 dark:bg-dark-900 text-gray-900 dark:text-gray-100 flex flex-col transition-colors duration-300">
       {originalUser ? (
-        <div className="bg-orange-500 text-white px-4 py-2 text-center text-sm font-bold flex justify-center items-center z-[70] relative">
+        <div className="bg-orange-500 text-white px-4 py-2 text-center text-sm font-bold flex justify-center items-center z-[70] relative shadow-md">
           <User size={18} className="mr-2" />
           You are impersonating {user?.name}
-          <button onClick={() => { stopImpersonating(); window.location.href = '/admin/customers'; }} className="ml-4 underline hover:text-orange-200">
+          {user?.role === 'delivery' && (
+            <button onClick={() => { navigate('/delivery'); }} className="ml-4 underline hover:text-orange-200">
+              Return to Delivery Portal
+            </button>
+          )}
+          <button onClick={() => { stopImpersonating(); window.location.href = user?.role === 'delivery' ? '/admin/partners' : '/admin/customers'; }} className="ml-4 underline hover:text-orange-200">
             Return to Admin
           </button>
         </div>
@@ -51,6 +52,14 @@ const MainLayout = () => {
           You are viewing as Customer
           <button onClick={() => { window.location.href = '/admin'; }} className="ml-4 underline hover:text-blue-200">
             Return to Admin Dashboard
+          </button>
+        </div>
+      ) : user?.role === 'delivery' ? (
+        <div className="bg-blue-600 text-white px-4 py-2 text-center text-sm font-bold flex justify-center items-center z-[70] relative shadow-md">
+          <User size={18} className="mr-2" />
+          You are viewing the Customer Store
+          <button onClick={() => { navigate('/delivery'); }} className="ml-4 underline hover:text-blue-200">
+            Return to Delivery Portal
           </button>
         </div>
       ) : null}

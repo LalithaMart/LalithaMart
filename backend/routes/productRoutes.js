@@ -43,7 +43,7 @@ router.route('/priority')
 import { cacheRoute } from '../middleware/cacheMiddleware.js';
 
 router.route('/')
-  .get(cacheRoute(300), asyncHandler(getProducts))
+  .get(asyncHandler(getProducts))
   .post(protect, admin, upload.array('images', 5), asyncHandler(createProduct));
 
 router.route('/inventory/stats')

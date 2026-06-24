@@ -4,9 +4,12 @@ import { protect } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
-router.get('/my-alerts', protect, getMyAlerts);
-router.post('/', protect, createStockAlert);
-router.get('/check/:productId', protect, checkStockAlert);
-router.delete('/:productId', protect, removeStockAlert);
+const asyncHandler = fn => (req, res, next) =>
+  Promise.resolve(fn(req, res, next)).catch(next);
+
+router.get('/my-alerts', protect, asyncHandler(getMyAlerts));
+router.post('/', protect, asyncHandler(createStockAlert));
+router.get('/check/:productId', protect, asyncHandler(checkStockAlert));
+router.delete('/:productId', protect, asyncHandler(removeStockAlert));
 
 export default router;

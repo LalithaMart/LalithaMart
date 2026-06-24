@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import api from '../../services/api';
-import { Plus, Edit, Trash2, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Plus, Edit, Trash2, X, ChevronLeft, ChevronRight, Edit2, Search, Filter, Box, Camera } from 'lucide-react';
 import ProductImageCarousel from '../../components/ProductImageCarousel';
 import { useUIStore } from '../../store/uiStore';
 import { motion, AnimatePresence } from 'framer-motion';
+import { compressImage } from '../../utils/imageCompression';
 
 const Products = () => {
   const [products, setProducts] = useState([]);
@@ -123,7 +124,16 @@ const Products = () => {
     data.append('stock', formData.stock);
     data.append('priority', formData.priority || 0);
     
-    if (formData.images) {
+    if ((!formData.imagesPreview || formData.imagesPreview.length === 0) && (!formData.images || formData.images.length === 0)) {
+      showToast('At least one image is required for a product', 'error');
+      return;
+    }
+
+    if (editingId && formData.imagesPreview) {
+      data.append('existingImages', JSON.stringify(formData.imagesPreview));
+    }
+
+    if (formData.images && formData.images.length > 0) {
       for(let i=0; i<formData.images.length; i++){
         data.append('images', formData.images[i]);
       }
@@ -299,20 +309,113 @@ const Products = () => {
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Product Images {editingId && '(Leave blank to keep current)'}</label>
-            {editingId && formData.imagesPreview && formData.imagesPreview.length > 0 && (
-              <div className="flex gap-2 mb-2 flex-wrap">
-                {formData.imagesPreview.map((img, idx) => (
-                  <img 
-                    key={idx} 
-                    src={img?.startsWith('http') ? img : `${import.meta.env.VITE_BACKEND_URL || "http://localhost:5000"}${img}`} 
-                    alt="Preview" 
-                    onClick={() => openFullscreen(formData.imagesPreview, idx)}
-                    className="h-16 w-16 object-cover rounded-lg border border-gray-200 dark:border-dark-700 cursor-pointer hover:opacity-80 transition" 
-                  />
+            {(editingId && formData.imagesPreview && formData.imagesPreview.length > 0) || (formData.images && formData.images.length > 0) ? (
+              <div className="flex gap-2 mb-3 flex-wrap">
+                {editingId && formData.imagesPreview && formData.imagesPreview.map((img, idx) => (
+                  <div key={`existing-${idx}`} className="relative group">
+                    <img 
+                      src={img?.startsWith('http') ? img : `${import.meta.env.VITE_BACKEND_URL || "http://localhost:5000"}${img}`} 
+                      alt="Existing Preview" 
+                      onClick={() => openFullscreen(formData.imagesPreview, idx)}
+                      className="h-20 w-20 object-cover rounded-lg border-2 border-gray-200 dark:border-dark-700 cursor-pointer hover:opacity-80 transition" 
+                    />
+                    <button 
+                      type="button"
+                      onClick={async (e) => {
+                        e.stopPropagation();
+                        // Validation: prevent deleting the last image
+                        if (formData.imagesPreview.length <= 1 && (!formData.images || formData.images.length === 0)) {
+                          showToast('At least one image must be present for a product', 'error');
+                          return;
+                        }
+
+                        if (window.confirm("Remove this existing image?")) {
+                          const newPreview = [...formData.imagesPreview];
+                          newPreview.splice(idx, 1);
+                          setFormData({ ...formData, imagesPreview: newPreview });
+                          
+                          if (editingId) {
+                            try {
+                              const instantData = new FormData();
+                              instantData.append('existingImages', JSON.stringify(newPreview));
+                              await api.put(`/products/${editingId}`, instantData);
+                              showToast('Image deleted permanently', 'success');
+                              fetchProducts();
+                            } catch (err) {
+                              console.error("Failed to delete image instantly", err.response?.data || err);
+                              showToast(err.response?.data?.message || 'Failed to delete image instantly', 'error');
+                            }
+                          }
+                        }
+                      }}
+                      className="absolute top-1 right-1 text-red-500 hover:text-red-700 bg-transparent p-1 drop-shadow-md transition z-10 opacity-0 group-hover:opacity-100"
+                    >
+                      <Trash2 size={18} />
+                    </button>
+                  </div>
+                ))}
+                {formData.images && Array.from(formData.images).map((file, idx) => (
+                  <div key={`new-${idx}`} className="relative group">
+                    <img 
+                      src={URL.createObjectURL(file)} 
+                      alt="New Preview" 
+                      className="h-20 w-20 object-cover rounded-lg border-2 border-primary-300 dark:border-primary-700" 
+                    />
+                    <div className="absolute inset-0 bg-black/40 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center pointer-events-none">
+                       <span className="text-white text-xs font-bold px-1 text-center">New</span>
+                    </div>
+                    <button 
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        // Validation: prevent deleting the last image
+                        if ((!formData.imagesPreview || formData.imagesPreview.length === 0) && formData.images.length <= 1) {
+                          showToast('At least one image must be present for a product', 'error');
+                          return;
+                        }
+
+                        const dt = new DataTransfer();
+                        Array.from(formData.images).forEach((f, i) => {
+                          if (i !== idx) dt.items.add(f);
+                        });
+                        setFormData({ ...formData, images: dt.files });
+                      }}
+                      className="absolute top-1 right-1 text-red-500 hover:text-red-700 bg-transparent p-1 drop-shadow-md transition z-10 opacity-0 group-hover:opacity-100"
+                    >
+                      <Trash2 size={18} />
+                    </button>
+                  </div>
                 ))}
               </div>
-            )}
-            <input type="file" multiple required={!editingId} accept="image/*" className="w-full text-gray-700 dark:text-gray-300" onChange={(e) => setFormData({...formData, images: e.target.files})} />
+            ) : null}
+            <div className="flex space-x-3">
+              <label className="flex-1 cursor-pointer bg-gray-50 dark:bg-dark-900 border-2 border-dashed border-gray-300 dark:border-dark-700 rounded-xl p-4 flex flex-col items-center justify-center hover:border-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-all">
+                <Box size={24} className="text-gray-400 dark:text-gray-500 mb-2" />
+                <span className="text-sm font-medium text-gray-600 dark:text-gray-300">Upload Files</span>
+                <input 
+                  type="file" multiple required={!editingId && (!formData.images || formData.images.length === 0)} accept="image/*" 
+                  className="hidden" 
+                  onChange={async (e) => {
+                    const files = Array.from(e.target.files);
+                    const compressedFiles = await Promise.all(files.map(f => compressImage(f)));
+                    setFormData({...formData, images: compressedFiles});
+                  }} 
+                />
+              </label>
+              <label className="flex-1 cursor-pointer bg-gray-50 dark:bg-dark-900 border-2 border-dashed border-gray-300 dark:border-dark-700 rounded-xl p-4 flex flex-col items-center justify-center hover:border-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-all">
+                <Camera size={24} className="text-gray-400 dark:text-gray-500 mb-2" />
+                <span className="text-sm font-medium text-gray-600 dark:text-gray-300">Capture Image</span>
+                <input 
+                  type="file" multiple required={!editingId && (!formData.images || formData.images.length === 0)} accept="image/*" capture="environment" 
+                  className="hidden" 
+                  onChange={async (e) => {
+                    const files = Array.from(e.target.files);
+                    const compressedFiles = await Promise.all(files.map(f => compressImage(f)));
+                    setFormData({...formData, images: compressedFiles});
+                  }} 
+                />
+              </label>
+            </div>
           </div>
           <div className="flex justify-end pt-2">
             <button type="button" onClick={handleCancel} className="px-4 py-2 text-gray-600 mr-2 hover:bg-gray-100 rounded-lg">Cancel</button>

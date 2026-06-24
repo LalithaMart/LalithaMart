@@ -41,7 +41,7 @@ router.route('/priority')
 import { cacheRoute } from '../middleware/cacheMiddleware.js';
 
 router.route('/')
-  .get(cacheRoute(3600), asyncHandler(getCategories)) // Cache categories for 1 hour
+  .get(asyncHandler(getCategories)) // Get categories
   .post(protect, admin, upload.single('image'), asyncHandler(createCategory));
 
 router.route('/:id')

@@ -114,6 +114,7 @@ function App() {
             {/* Delivery Partner Routes */}
             <Route path="/delivery" element={user?.role === 'delivery' || isAdmin ? <DeliveryLayout /> : <Navigate to="/login" />}>
               <Route index element={<DeliveryDashboard />} />
+              <Route path="dashboard" element={<DeliveryDashboard />} />
               <Route path="history" element={<DeliveryHistory />} />
               <Route path="profile" element={<DeliveryProfile />} />
               <Route path="contact" element={<ContactUs />} />

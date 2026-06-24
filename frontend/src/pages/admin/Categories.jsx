@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import api from '../../services/api';
-import { Plus, Edit, Trash2, X } from 'lucide-react';
+import { Plus, Edit, Trash2, X, Box, Camera } from 'lucide-react';
+import { compressImage } from '../../utils/imageCompression';
 
 import { useUIStore } from '../../store/uiStore';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -34,11 +35,20 @@ const Categories = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    if (!formData.imagePreview && !formData.image) {
+      showToast('A category must have an image', 'error');
+      return;
+    }
+
     const data = new FormData();
     data.append('name', formData.name);
     data.append('description', formData.description);
     data.append('priority', formData.priority);
     data.append('isActive', formData.isActive);
+    if (editingId) {
+      data.append('existingImage', formData.imagePreview || '');
+    }
     if (formData.image) {
       data.append('image', formData.image);
     }
@@ -161,21 +171,111 @@ const Categories = () => {
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Category Image {editingId && '(Leave blank to keep current)'}</label>
-            {editingId && formData.imagePreview && (
-              <img 
-                src={formData.imagePreview?.startsWith('http') ? formData.imagePreview : `${import.meta.env.VITE_BACKEND_URL || "http://localhost:5000"}${formData.imagePreview}`} 
-                alt="Preview" 
-                onClick={() => setFullscreenImage(formData.imagePreview)}
-                className="h-16 mb-2 rounded-lg object-cover cursor-pointer hover:opacity-80 transition" 
-              />
-            )}
-            <input
-              type="file"
-              required={!editingId}
-              accept="image/*"
-              className="w-full"
-              onChange={(e) => setFormData({...formData, image: e.target.files[0]})}
-            />
+            <div className="flex gap-2 mb-3 flex-wrap">
+              {formData.imagePreview && (
+                <div className="relative group mt-2">
+                  <img 
+                    src={formData.imagePreview?.startsWith('http') ? formData.imagePreview : `${import.meta.env.VITE_BACKEND_URL || "http://localhost:5000"}${formData.imagePreview}`} 
+                    alt="Category Preview" 
+                    onClick={() => setFullscreenImage(formData.imagePreview)}
+                    className="h-20 w-20 object-cover rounded-lg border-2 border-gray-200 dark:border-dark-700 cursor-pointer hover:opacity-80 transition" 
+                  />
+                  <div className="absolute inset-0 bg-black/40 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center pointer-events-none">
+                     <span className="text-white text-xs font-bold px-1 text-center">Existing</span>
+                  </div>
+                  <button 
+                    type="button"
+                    onClick={async (e) => {
+                      e.stopPropagation();
+                      // Validation: prevent deleting the image if no new image is selected
+                      if (!formData.image) {
+                        showToast('A category must have an image', 'error');
+                        return;
+                      }
+
+                      if (window.confirm("Remove this existing image?")) {
+                        setFormData({ ...formData, imagePreview: null });
+                        
+                        if (editingId) {
+                          try {
+                            const instantData = new FormData();
+                            instantData.append('existingImage', 'null');
+                            await api.put(`/categories/${editingId}`, instantData);
+                            showToast('Image deleted permanently', 'success');
+                            fetchCategories();
+                          } catch (err) {
+                            console.error("Failed to delete image instantly", err.response?.data || err);
+                            showToast(err.response?.data?.message || 'Failed to delete image instantly', 'error');
+                          }
+                        }
+                      }
+                    }}
+                    className="absolute top-1 right-1 text-red-500 hover:text-red-700 bg-transparent p-1 drop-shadow-md transition z-10 opacity-0 group-hover:opacity-100"
+                  >
+                    <Trash2 size={18} />
+                  </button>
+                </div>
+              )}
+              {formData.image && (
+                <div className="relative group mt-2">
+                  <img 
+                    src={URL.createObjectURL(formData.image)} 
+                    alt="New Preview" 
+                    className="h-20 w-20 object-cover rounded-lg border-2 border-primary-300 dark:border-primary-700" 
+                  />
+                  <div className="absolute inset-0 bg-black/40 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center pointer-events-none">
+                     <span className="text-white text-xs font-bold px-1 text-center">New</span>
+                  </div>
+                  <button 
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (window.confirm("Remove this newly captured image?")) {
+                        setFormData({ ...formData, image: null });
+                      }
+                    }}
+                    className="absolute top-1 right-1 text-red-500 hover:text-red-700 bg-transparent p-1 drop-shadow-md transition z-10 opacity-0 group-hover:opacity-100"
+                  >
+                    <Trash2 size={18} />
+                  </button>
+                </div>
+              )}
+            </div>
+            <div className="flex space-x-3">
+              <label className="flex-1 cursor-pointer bg-gray-50 dark:bg-dark-900 border-2 border-dashed border-gray-300 dark:border-dark-700 rounded-xl p-4 flex flex-col items-center justify-center hover:border-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-all">
+                <Box size={24} className="text-gray-400 dark:text-gray-500 mb-2" />
+                <span className="text-sm font-medium text-gray-600 dark:text-gray-300">Upload Image</span>
+                <input
+                  type="file"
+                  required={!editingId && !formData.image}
+                  accept="image/*"
+                  className="hidden"
+                  onChange={async (e) => {
+                    if (e.target.files[0]) {
+                      const compressedFile = await compressImage(e.target.files[0]);
+                      setFormData({...formData, image: compressedFile});
+                    }
+                  }}
+                />
+              </label>
+              <label className="flex-1 cursor-pointer bg-gray-50 dark:bg-dark-900 border-2 border-dashed border-gray-300 dark:border-dark-700 rounded-xl p-4 flex flex-col items-center justify-center hover:border-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-all">
+                <Camera size={24} className="text-gray-400 dark:text-gray-500 mb-2" />
+                <span className="text-sm font-medium text-gray-600 dark:text-gray-300">Capture Image</span>
+                <input
+                  type="file"
+                  required={!editingId && !formData.image}
+                  accept="image/*"
+                  capture="environment"
+                  className="hidden"
+                  onChange={async (e) => {
+                    if (e.target.files[0]) {
+                      const compressedFile = await compressImage(e.target.files[0]);
+                      setFormData({...formData, image: compressedFile});
+                    }
+                  }}
+                />
+              </label>
+            </div>
           </div>
           <div className="flex justify-end">
             <button type="button" onClick={handleCancel} className="px-4 py-2 text-gray-600 dark:text-gray-400 mr-2 hover:bg-gray-100 rounded-lg">Cancel</button>

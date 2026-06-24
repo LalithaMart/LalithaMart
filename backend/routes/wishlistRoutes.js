@@ -4,7 +4,10 @@ import { protect } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
-router.route('/').get(protect, getWishlist);
-router.route('/toggle').post(protect, toggleWishlistItem);
+const asyncHandler = fn => (req, res, next) =>
+  Promise.resolve(fn(req, res, next)).catch(next);
+
+router.route('/').get(protect, asyncHandler(getWishlist));
+router.route('/toggle').post(protect, asyncHandler(toggleWishlistItem));
 
 export default router;

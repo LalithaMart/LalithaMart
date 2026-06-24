@@ -74,7 +74,7 @@ const DeliveryDashboard = () => {
     try {
       const { data } = await api.get('/orders/assigned');
       setAllOrders(data);
-      setOrders(data.filter(o => o.status !== 'Completed' && o.status !== 'Cancelled' && o.deliveryPartner === user?._id));
+      setOrders(data.filter(o => o.status !== 'Completed' && o.status !== 'Cancelled'));
     } catch (error) {
       console.error(error);
     } finally {

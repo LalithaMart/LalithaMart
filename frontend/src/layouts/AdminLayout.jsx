@@ -198,12 +198,14 @@ const AdminLayout = () => {
               {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
             </button>
 
-            <Link to="/" className="hidden md:flex text-sm font-bold text-gray-600 dark:text-gray-300 hover:text-blue-600 bg-gray-50 dark:bg-dark-800 px-4 py-2 rounded-xl border border-gray-200 dark:border-dark-600 transition-all hover:border-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/20">
-              View as Customer
+            <Link to="/" className="flex items-center justify-center text-sm font-bold text-gray-600 dark:text-gray-300 hover:text-blue-600 bg-gray-50 dark:bg-dark-800 p-2 md:px-4 md:py-2 rounded-xl md:border border-gray-200 dark:border-dark-600 transition-all hover:border-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/20" title="View as Customer">
+              <span className="hidden md:block">View as Customer</span>
+              <ShoppingBag className="md:hidden" size={20} />
             </Link>
 
-            <Link to="/delivery" className="hidden md:flex text-sm font-bold text-gray-600 dark:text-gray-300 hover:text-orange-600 bg-gray-50 dark:bg-dark-800 px-4 py-2 rounded-xl border border-gray-200 dark:border-dark-600 transition-all hover:border-orange-300 hover:bg-orange-50 dark:hover:bg-orange-900/20">
-              View as Partner
+            <Link to="/delivery" className="flex items-center justify-center text-sm font-bold text-gray-600 dark:text-gray-300 hover:text-orange-600 bg-gray-50 dark:bg-dark-800 p-2 md:px-4 md:py-2 rounded-xl md:border border-gray-200 dark:border-dark-600 transition-all hover:border-orange-300 hover:bg-orange-50 dark:hover:bg-orange-900/20" title="View as Partner">
+              <span className="hidden md:block">View as Partner</span>
+              <Truck className="md:hidden" size={20} />
             </Link>
             <div className="relative">
               <NotificationCenter />

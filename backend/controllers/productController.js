@@ -124,8 +124,20 @@ const updateProduct = async (req, res) => {
     product.category = category || product.category;
     product.stock = stock !== undefined ? stock : product.stock;
 
-    if (req.files && req.files.length > 0) {
-      product.images = req.files.map(file => file.path);
+    let parsedExistingImages = product.images; // default to current images
+    if (req.body.existingImages !== undefined) {
+      try {
+        parsedExistingImages = JSON.parse(req.body.existingImages);
+      } catch (e) {
+        parsedExistingImages = Array.isArray(req.body.existingImages) ? req.body.existingImages : [req.body.existingImages];
+      }
+    }
+
+    const newUploadedImages = req.files ? req.files.map(file => file.path) : [];
+
+    // Update images if there are new files or explicit existingImages passed
+    if (req.body.existingImages !== undefined || req.files?.length > 0) {
+      product.images = [...parsedExistingImages, ...newUploadedImages];
     }
 
     const updatedProduct = await product.save();

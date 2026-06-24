@@ -1,6 +1,6 @@
 import { Outlet, Link, useNavigate, useLocation, Navigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
-import { MapPin, PackageCheck, LogOut, ClipboardList, User, ArrowLeft, Phone, Moon, Sun } from 'lucide-react';
+import { MapPin, PackageCheck, LogOut, ClipboardList, User, ArrowLeft, Phone, Moon, Sun, Store } from 'lucide-react';
 import api from '../services/api';
 import { useUIStore } from '../store/uiStore';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -75,10 +75,13 @@ const DeliveryLayout = () => {
           </div>
           
           <div className="flex items-center space-x-2 sm:space-x-4">
-          <NotificationCenter />
-          <button onClick={toggleTheme} className="text-gray-500 dark:text-gray-400 hover:text-primary-600 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-dark-700 transition-colors">
-            {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
-          </button>
+            <button onClick={() => navigate('/')} title="View as Customer" className="text-gray-500 dark:text-gray-400 hover:text-primary-600 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-dark-700 transition-colors">
+              <Store size={20} />
+            </button>
+            <NotificationCenter />
+            <button onClick={toggleTheme} className="text-gray-500 dark:text-gray-400 hover:text-primary-600 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-dark-700 transition-colors">
+              {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+            </button>
             <button onClick={handleLogout} className="text-gray-500 dark:text-gray-400 hover:text-red-500 p-2 rounded-full hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
               <LogOut size={20} />
             </button>
