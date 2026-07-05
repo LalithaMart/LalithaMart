@@ -684,7 +684,7 @@ const AdminDashboard = () => {
                 <h4 className="font-bold text-primary-800 mb-3">
                   {selectedOrder.deliveryPartner ? 'Re-assign Delivery Partner' : 'Assign Delivery Partner'}
                 </h4>
-                <div className="flex gap-4">
+                <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
                   <select 
                     className="flex-1 px-4 py-2 rounded-lg border dark:border-dark-600 bg-white dark:bg-dark-900 text-gray-900 dark:text-white focus:ring-primary-500 focus:border-primary-500"
                     value={assignPartnerId}

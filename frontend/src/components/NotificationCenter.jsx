@@ -4,7 +4,7 @@ import { useNotificationStore } from '../store/notificationStore';
 import { useSocketStore } from '../store/socketStore';
 import { useNavigate } from 'react-router-dom';
 
-const NotificationCenter = () => {
+const NotificationCenter = ({ mobile }) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
   const navigate = useNavigate();
@@ -61,7 +61,7 @@ const NotificationCenter = () => {
   };
 
   return (
-    <div className="relative" ref={dropdownRef}>
+    <div className={`relative ${mobile ? 'flex justify-center static sm:relative' : ''}`} ref={dropdownRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="relative p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-white transition rounded-full hover:bg-gray-100 dark:hover:bg-dark-700 focus:outline-none"
@@ -75,7 +75,13 @@ const NotificationCenter = () => {
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-white dark:bg-dark-800 rounded-xl shadow-2xl border border-gray-100 dark:border-dark-700 z-50 overflow-hidden flex flex-col max-h-[85vh]">
+        <div 
+          className={
+            mobile 
+              ? "fixed bottom-16 left-2 right-2 sm:absolute sm:bottom-full sm:right-auto sm:left-1/2 sm:-translate-x-1/2 sm:mb-2 w-auto sm:w-80 bg-white dark:bg-dark-800 rounded-xl shadow-2xl border border-gray-100 dark:border-dark-700 z-[100] overflow-hidden flex flex-col max-h-[70vh]" 
+              : "absolute right-0 mt-2 w-80 sm:w-96 bg-white dark:bg-dark-800 rounded-xl shadow-2xl border border-gray-100 dark:border-dark-700 z-50 overflow-hidden flex flex-col max-h-[85vh]"
+          }
+        >
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-dark-700 bg-gray-50 dark:bg-dark-900">
             <h3 className="font-bold text-gray-900 dark:text-white">Notifications</h3>

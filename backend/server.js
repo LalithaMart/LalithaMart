@@ -18,12 +18,16 @@ import notificationRoutes from './routes/notificationRoutes.js';
 import stockAlertRoutes from './routes/stockAlertRoutes.js';
 
 import { notFound, errorHandler } from './middleware/errorMiddleware.js';
+import { startCronJobs } from './cronJobs.js';
 
 // Load env vars
 dotenv.config();
 
 // Connect to database
 connectDB();
+
+// Start cron jobs
+startCronJobs();
 
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';

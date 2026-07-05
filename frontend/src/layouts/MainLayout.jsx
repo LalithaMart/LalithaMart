@@ -155,12 +155,12 @@ const MainLayout = () => {
           <Heart size={20} />
           <span className="text-[10px] mt-1 font-medium">Saved</span>
         </Link>
-        {user && (
-          <div className="flex flex-col items-center justify-center w-full h-full">
-            <NotificationCenter />
-            <span className="text-[10px] mt-0.5 font-medium text-gray-500">Alerts</span>
-          </div>
-        )}
+          {user && (
+            <div className="flex flex-col items-center justify-center w-full h-full">
+              <NotificationCenter mobile={true} />
+              <span className="text-[10px] mt-0.5 font-medium text-gray-500">Alerts</span>
+            </div>
+          )}
           <Link to="/cart" className={`flex flex-col items-center justify-center w-full h-full relative ${location.pathname === '/cart' ? 'text-primary-600' : 'text-gray-500 dark:text-gray-400'}`}>
             <div className="relative">
               <ShoppingCart size={20} />

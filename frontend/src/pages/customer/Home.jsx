@@ -284,6 +284,21 @@ const Home = () => {
                     altText={product.name} 
                     className={`absolute inset-0 w-full h-full object-contain transform transition-transform duration-700 ${product.stock === 0 ? 'grayscale filter blur-[2px]' : 'group-hover:scale-110'}`} 
                   />
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      if (user) {
+                        toggleWishlist(product._id);
+                      } else {
+                        showToast('Please login to add to wishlist', 'error');
+                        navigate('/login');
+                      }
+                    }}
+                    className="absolute top-3 right-3 p-2 bg-white/80 dark:bg-dark-800/80 backdrop-blur-sm rounded-full shadow-sm text-gray-400 hover:text-red-500 hover:scale-110 transition-all z-20"
+                  >
+                    <Heart size={18} className={wishlistIds?.includes(product._id) ? 'fill-red-500 text-red-500' : ''} />
+                  </button>
                   {product.stock === 0 && (
                     <div className="absolute inset-0 bg-white/50 dark:bg-black/50 backdrop-blur-[2px] flex items-center justify-center z-10 transition-all duration-300 overflow-hidden">
                       <img src="/out-of-stock.png" alt="Out of Stock" className="w-3/4 object-contain opacity-90 drop-shadow-2xl transform -rotate-12" />
