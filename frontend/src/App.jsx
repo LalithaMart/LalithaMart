@@ -16,36 +16,56 @@ const LoadingScreen = () => (
   </div>
 );
 
+// Wrapper for lazy to handle chunk loading errors (Vite updates)
+const lazyRetry = (componentImport) => {
+  return lazy(async () => {
+    const pageHasAlreadyBeenForceRefreshed = JSON.parse(
+      window.sessionStorage.getItem('page-has-been-force-refreshed') || 'false'
+    );
+    try {
+      const component = await componentImport();
+      window.sessionStorage.setItem('page-has-been-force-refreshed', 'false');
+      return component;
+    } catch (error) {
+      if (!pageHasAlreadyBeenForceRefreshed) {
+        window.sessionStorage.setItem('page-has-been-force-refreshed', 'true');
+        window.location.reload();
+      }
+      throw error;
+    }
+  });
+};
+
 // Lazy Loaded Pages
-const Login = lazy(() => import('./pages/Login'));
-const Register = lazy(() => import('./pages/Register'));
-const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
+const Login = lazyRetry(() => import('./pages/Login'));
+const Register = lazyRetry(() => import('./pages/Register'));
+const ForgotPassword = lazyRetry(() => import('./pages/ForgotPassword'));
 
 // Admin Pages
-const AdminDashboard = lazy(() => import('./pages/admin/Dashboard'));
-const AdminOrders = lazy(() => import('./pages/admin/AdminOrders'));
-const Categories = lazy(() => import('./pages/admin/Categories'));
-const Products = lazy(() => import('./pages/admin/Products'));
-const Customers = lazy(() => import('./pages/admin/Customers'));
-const Partners = lazy(() => import('./pages/admin/Partners'));
-const Settlements = lazy(() => import('./pages/admin/Settlements'));
-const StoreSettings = lazy(() => import('./pages/admin/StoreSettings'));
-const Messages = lazy(() => import('./pages/admin/Messages'));
+const AdminDashboard = lazyRetry(() => import('./pages/admin/Dashboard'));
+const AdminOrders = lazyRetry(() => import('./pages/admin/AdminOrders'));
+const Categories = lazyRetry(() => import('./pages/admin/Categories'));
+const Products = lazyRetry(() => import('./pages/admin/Products'));
+const Customers = lazyRetry(() => import('./pages/admin/Customers'));
+const Partners = lazyRetry(() => import('./pages/admin/Partners'));
+const Settlements = lazyRetry(() => import('./pages/admin/Settlements'));
+const StoreSettings = lazyRetry(() => import('./pages/admin/StoreSettings'));
+const Messages = lazyRetry(() => import('./pages/admin/Messages'));
 
 // Delivery Pages
-const DeliveryDashboard = lazy(() => import('./pages/delivery/Dashboard'));
-const DeliveryHistory = lazy(() => import('./pages/delivery/History'));
-const DeliveryProfile = lazy(() => import('./pages/delivery/Profile'));
+const DeliveryDashboard = lazyRetry(() => import('./pages/delivery/Dashboard'));
+const DeliveryHistory = lazyRetry(() => import('./pages/delivery/History'));
+const DeliveryProfile = lazyRetry(() => import('./pages/delivery/Profile'));
 
 // Customer Pages
-const Home = lazy(() => import('./pages/customer/Home'));
-const ProductDetails = lazy(() => import('./pages/customer/ProductDetails'));
-const Cart = lazy(() => import('./pages/customer/Cart'));
-const Checkout = lazy(() => import('./pages/customer/Checkout'));
-const Profile = lazy(() => import('./pages/customer/Profile'));
-const OrderTracking = lazy(() => import('./pages/customer/OrderTracking'));
-const Wishlist = lazy(() => import('./pages/customer/Wishlist'));
-const ContactUs = lazy(() => import('./pages/customer/ContactUs'));
+const Home = lazyRetry(() => import('./pages/customer/Home'));
+const ProductDetails = lazyRetry(() => import('./pages/customer/ProductDetails'));
+const Cart = lazyRetry(() => import('./pages/customer/Cart'));
+const Checkout = lazyRetry(() => import('./pages/customer/Checkout'));
+const Profile = lazyRetry(() => import('./pages/customer/Profile'));
+const OrderTracking = lazyRetry(() => import('./pages/customer/OrderTracking'));
+const Wishlist = lazyRetry(() => import('./pages/customer/Wishlist'));
+const ContactUs = lazyRetry(() => import('./pages/customer/ContactUs'));
 
 function App() {
   const { user, originalUser } = useAuthStore();
