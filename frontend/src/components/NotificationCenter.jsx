@@ -17,6 +17,7 @@ const NotificationCenter = ({ mobile }) => {
     markAsClicked,
     deleteNotification,
     clearAllRead,
+    clearAll,
     addRealtimeNotification 
   } = useNotificationStore();
 
@@ -154,13 +155,21 @@ const NotificationCenter = ({ mobile }) => {
           </div>
 
           {/* Footer */}
-          {notifications.some(n => n.isRead) && (
-            <div className="p-3 border-t border-gray-100 dark:border-dark-700 bg-gray-50 dark:bg-dark-900 flex justify-center">
+          {notifications.length > 0 && (
+            <div className="p-3 border-t border-gray-100 dark:border-dark-700 bg-gray-50 dark:bg-dark-900 flex justify-center gap-4">
+              {notifications.some(n => n.isRead) && (
+                <button
+                  onClick={clearAllRead}
+                  className="text-xs font-bold text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 uppercase tracking-wider"
+                >
+                  Clear Read
+                </button>
+              )}
               <button
-                onClick={clearAllRead}
-                className="text-xs font-bold text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 uppercase tracking-wider"
+                onClick={clearAll}
+                className="text-xs font-bold text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 uppercase tracking-wider"
               >
-                Clear all read
+                Clear All
               </button>
             </div>
           )}

@@ -81,6 +81,16 @@ export const useNotificationStore = create((set, get) => ({
     }
   },
 
+  clearAll: async () => {
+    try {
+      await api.delete('/notifications/all');
+      set({ notifications: [], unreadCount: 0 });
+      useUIStore.getState().showToast('All notifications cleared', 'success');
+    } catch (error) {
+      useUIStore.getState().showToast('Failed to clear notifications', 'error');
+    }
+  },
+
   addRealtimeNotification: (notification) => {
     set(state => {
       // Avoid duplicates
