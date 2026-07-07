@@ -177,13 +177,13 @@ const Customers = () => {
                           showToast('Failed to update customer status', 'error');
                         }
                       }}
-                      className={`px-3 py-1 rounded-full text-xs font-bold ${customer.isBlocked ? 'bg-red-100 text-red-700 dark:text-red-400' : 'bg-gray-100 text-gray-700 dark:text-gray-300 hover:bg-red-50 dark:bg-red-900/20 hover:text-red-700 dark:text-red-400'}`}
+                      className={`px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap inline-block ${customer.isBlocked ? 'bg-red-100 text-red-700 dark:text-red-400' : 'bg-gray-100 text-gray-700 dark:text-gray-300 hover:bg-red-50 dark:bg-red-900/20 hover:text-red-700 dark:text-red-400'}`}
                     >
                       {customer.isBlocked ? 'Blocked' : 'Block'}
                     </button>
                     <button 
                       onClick={(e) => handleDeleteCustomer(e, customer._id)}
-                      className="px-3 py-1 rounded-full text-xs font-bold bg-red-50 dark:bg-red-900/20 text-red-600 hover:bg-red-100"
+                      className="px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap inline-block bg-red-50 dark:bg-red-900/20 text-red-600 hover:bg-red-100"
                     >
                       Delete
                     </button>

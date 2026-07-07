@@ -576,7 +576,7 @@ const AdminDashboard = () => {
                   <td className="p-4 text-sm text-gray-600 dark:text-gray-400">{new Date(order.createdAt).toLocaleDateString()}</td>
                   <td className="p-4 text-sm text-gray-800 dark:text-gray-100 font-medium">₹{order.totalAmount}</td>
                   <td className="p-4 text-sm">
-                    <span className={`px-2.5 py-1 rounded-full text-xs font-medium 
+                    <span className={`px-2.5 py-1 rounded-full text-xs font-medium whitespace-nowrap inline-block 
                       ${order.status === 'Pending' ? 'bg-yellow-100 text-yellow-800 dark:text-yellow-400' : 
                         order.status === 'Completed' ? 'bg-green-100 text-green-800' : 
                         'bg-blue-100 text-blue-800'}`}>

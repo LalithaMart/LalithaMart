@@ -646,7 +646,7 @@ const Profile = () => {
                 </div>
                 <div className="mt-4 sm:mt-0 sm:text-right flex flex-col sm:items-end">
                   <p className="font-black text-primary-600 dark:text-primary-400 text-2xl mb-2">₹{order.totalAmount}</p>
-                  <span className={`inline-flex items-center px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-widest shadow-sm
+                  <span className={`inline-flex items-center px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-widest shadow-sm whitespace-nowrap inline-block
                     ${order.status === 'Pending' ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400 border border-yellow-200 dark:border-yellow-800/50' : 
                       order.status === 'Completed' || order.status === 'Delivered' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 border border-green-200 dark:border-green-800/50' : 
                       order.status === 'Cancelled' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 border border-red-200 dark:border-red-800/50' :

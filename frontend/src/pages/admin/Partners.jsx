@@ -255,11 +255,11 @@ const Partners = () => {
                               showToast('Failed to suspend', 'error');
                             }
                           }}
-                          className="px-3 py-1 rounded-full text-xs font-bold bg-gray-100 text-gray-700 dark:text-gray-300 hover:bg-red-50 dark:bg-red-900/20 hover:text-red-700 dark:text-red-400"
+                          className="px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap inline-block bg-gray-100 text-gray-700 dark:text-gray-300 hover:bg-red-50 dark:bg-red-900/20 hover:text-red-700 dark:text-red-400"
                         >
                           Suspend
                         </button>
-                        <button onClick={(e) => handleDeletePartner(e, partner._id)} className="px-3 py-1 rounded-full text-xs font-bold bg-red-50 dark:bg-red-900/20 text-red-600 hover:bg-red-100">Delete</button>
+                        <button onClick={(e) => handleDeletePartner(e, partner._id)} className="px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap inline-block bg-red-50 dark:bg-red-900/20 text-red-600 hover:bg-red-100">Delete</button>
                       </div>
                     </div>
                   </div>
@@ -316,12 +316,12 @@ const Partners = () => {
                               showToast('Failed to reactivate', 'error');
                             }
                           }}
-                          className="px-3 py-1 rounded-full text-xs font-bold bg-green-100 text-green-700 hover:bg-green-200"
+                          className="px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap inline-block bg-green-100 text-green-700 hover:bg-green-200"
                         >
                           Reactivate
                         </button>
                       )}
-                      <button onClick={(e) => handleDeletePartner(e, partner._id)} className="px-3 py-1 rounded-full text-xs font-bold bg-red-100 text-red-600 hover:bg-red-200">Delete</button>
+                      <button onClick={(e) => handleDeletePartner(e, partner._id)} className="px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap inline-block bg-red-100 text-red-600 hover:bg-red-200">Delete</button>
                     </div>
                   </div>
                 </div>

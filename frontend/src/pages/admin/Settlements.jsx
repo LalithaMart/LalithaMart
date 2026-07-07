@@ -297,7 +297,7 @@ const Settlements = () => {
                       <td className="p-4 font-bold text-gray-500 dark:text-gray-400 text-right">₹{row.submittedCash}</td>
                       <td className="p-4 font-bold text-red-600 text-right text-lg">₹{row.pendingCash}</td>
                       <td className="p-4 text-center">
-                        <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${row.statusColor}`}>
+                        <span className={`px-2.5 py-1 rounded-full text-xs font-bold whitespace-nowrap inline-block ${row.statusColor}`}>
                           {row.statusText}
                         </span>
                       </td>

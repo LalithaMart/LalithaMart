@@ -163,7 +163,7 @@ const OrderTracking = () => {
             <p className="text-gray-500 dark:text-gray-400 font-medium">{order.orderId || `Order #${order._id.substring(18)}`}</p>
           </div>
           <div className="mt-4 md:mt-0">
-            <span className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-black uppercase tracking-widest shadow-sm
+            <span className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-black uppercase tracking-widest shadow-sm whitespace-nowrap inline-block
               ${order.status === 'Completed' || order.status === 'Delivered' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 border border-green-200 dark:border-green-800/50' : 
                 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 border border-blue-200 dark:border-blue-800/50'}`}>
               {order.status === 'Delivered' && <CheckCircle size={16} className="mr-1" />}

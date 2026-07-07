@@ -519,7 +519,7 @@ const Products = () => {
                                 />
                               </div>
                               <div>
-                                <p className="font-medium text-gray-800 dark:text-gray-100">{product.name} {product.priority > 0 && <span className="text-xs text-primary-600 dark:text-primary-400 font-bold ml-1">P{product.priority}</span>} {product.isOnHold && <span className="text-xs bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400 px-2 py-0.5 rounded-full font-bold ml-2">On Hold</span>}</p>
+                                <p className="font-medium text-gray-800 dark:text-gray-100">{product.name} {product.priority > 0 && <span className="text-xs text-primary-600 dark:text-primary-400 font-bold ml-1">P{product.priority}</span>} {product.isOnHold && <span className="text-xs bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400 px-2 py-0.5 rounded-full font-bold ml-2 whitespace-nowrap inline-block">On Hold</span>}</p>
                                 {product.productId && <p className="text-xs text-gray-400 font-mono">{product.productId}</p>}
                                 <p className="text-xs text-gray-500 dark:text-gray-400 truncate w-48">{product.description}</p>
                               </div>

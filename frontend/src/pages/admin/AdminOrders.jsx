@@ -594,7 +594,7 @@ const AdminOrders = () => {
                         <div>
                           <p className="font-bold text-gray-800 dark:text-gray-200 text-sm">
                             {partner.name}
-                            {isOutForDelivery && <span className="ml-2 text-[10px] bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 px-2 py-0.5 rounded-full uppercase tracking-wider font-bold">Out for Delivery</span>}
+                            {isOutForDelivery && <span className="ml-2 text-[10px] bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 px-2 py-0.5 rounded-full uppercase tracking-wider font-bold whitespace-nowrap inline-block">Out for Delivery</span>}
                           </p>
                           <p className="text-xs text-gray-500 dark:text-gray-400">{partner.phone}</p>
                         </div>

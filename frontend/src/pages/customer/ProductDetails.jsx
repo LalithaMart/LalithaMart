@@ -184,7 +184,7 @@ const ProductDetails = () => {
             </div>
           )}
           {product.discountPrice > 0 && product.stock > 0 && (
-             <div className="absolute top-4 left-4 bg-red-500 text-white px-4 py-2 rounded-full font-black text-sm z-20 shadow-lg shadow-red-500/50">
+             <div className="absolute top-4 left-4 bg-red-500 text-white px-4 py-2 rounded-full font-black text-sm z-20 shadow-lg shadow-red-500/50 whitespace-nowrap inline-block">
                 Sale -{Math.round((1 - product.discountPrice/product.price) * 100)}%
              </div>
           )}
@@ -234,7 +234,7 @@ const ProductDetails = () => {
           <div className="pt-6 border-t border-gray-100 dark:border-dark-700 mt-auto">
             <p className="text-sm text-gray-500 dark:text-gray-400 mb-4 flex items-center font-medium">
               Availability: 
-              <span className={`font-bold ml-2 px-3 py-1 rounded-full text-xs shadow-sm ${product.stock > 0 ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'}`}>
+              <span className={`font-bold ml-2 px-3 py-1 rounded-full text-xs shadow-sm whitespace-nowrap inline-block ${product.stock > 0 ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'}`}>
                 {product.stock > 0 ? `In Stock` : 'Out of Stock'}
               </span>
             </p>

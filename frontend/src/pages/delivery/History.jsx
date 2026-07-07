@@ -288,7 +288,7 @@ const DeliveryHistory = () => {
                         {order.orderId || `#${order._id.substring(18)}`}
                         <ChevronDown size={16} className={`ml-2 text-gray-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
                       </p>
-                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-black uppercase tracking-wider border shadow-sm ${(order.status === 'Completed' && order.deliveryPartner === user?._id) ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 border-green-200 dark:border-green-800/50' : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 border-red-200 dark:border-red-800/50'}`}>
+                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-black uppercase tracking-wider border shadow-sm whitespace-nowrap inline-block ${(order.status === 'Completed' && order.deliveryPartner === user?._id) ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 border-green-200 dark:border-green-800/50' : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 border-red-200 dark:border-red-800/50'}`}>
                         {(order.cancelledBy && order.cancelledBy.includes(user?._id)) ? 'Cancelled' : order.status}
                       </span>
                     </div>

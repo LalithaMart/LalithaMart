@@ -305,7 +305,7 @@ const Home = () => {
                     </div>
                   )}
                   {product.discountPrice > 0 && product.stock > 0 && (
-                     <div className="absolute top-3 left-3 bg-red-500 text-white px-3 py-1 rounded-full font-black text-xs z-20 shadow-md shadow-red-500/50">
+                     <div className="absolute top-3 left-3 bg-red-500 text-white px-3 py-1 rounded-full font-black text-xs z-20 shadow-md shadow-red-500/50 whitespace-nowrap inline-block">
                         -{Math.round((1 - product.discountPrice/product.price) * 100)}%
                      </div>
                   )}
