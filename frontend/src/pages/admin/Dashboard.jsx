@@ -45,7 +45,7 @@ const AdminDashboard = () => {
   const fetchDashboardData = useCallback(async () => {
     try {
       const [productsRes, ordersRes, usersRes, notifRes] = await Promise.all([
-        api.get('/products'),
+        api.get('/products?all=true'),
         api.get('/orders'),
         api.get('/users'),
         api.get('/notifications/analytics').catch(() => ({ data: { total: 0, read: 0, clicked: 0, readRate: 0, clickRate: 0 } }))
@@ -389,7 +389,10 @@ const AdminDashboard = () => {
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
-        <div className="bg-white dark:bg-dark-800 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-dark-700 flex items-center">
+        <div 
+          onClick={() => navigate('/admin/orders')}
+          className="bg-white dark:bg-dark-800 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-dark-700 flex items-center cursor-pointer hover:shadow-md transition"
+        >
           <div className="p-3 bg-blue-100 text-blue-600 rounded-lg mr-4">
             <ShoppingBag size={24} />
           </div>
@@ -399,7 +402,10 @@ const AdminDashboard = () => {
           </div>
         </div>
 
-          <div className="bg-white dark:bg-dark-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-dark-700 flex items-center transition hover:shadow-md">
+          <div 
+            onClick={() => navigate('/admin/orders')}
+            className="bg-white dark:bg-dark-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-dark-700 flex items-center transition hover:shadow-md cursor-pointer"
+          >
             <div className="bg-red-50 dark:bg-red-900/20 p-4 rounded-xl mr-4 text-red-600">
               <TrendingUp size={28} />
             </div>
@@ -408,7 +414,10 @@ const AdminDashboard = () => {
               <h3 className="text-2xl font-black text-gray-800 dark:text-white">₹{filteredOrders.filter(o => o.status === 'Completed').reduce((sum, o) => sum + o.totalAmount, 0)}</h3>
             </div>
           </div>
-          <div className="bg-white dark:bg-dark-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-dark-700 flex items-center transition hover:shadow-md">
+          <div 
+            onClick={() => navigate('/admin/customers')}
+            className="bg-white dark:bg-dark-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-dark-700 flex items-center transition hover:shadow-md cursor-pointer"
+          >
             <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-xl mr-4 text-purple-600">
               <Users size={28} />
             </div>
@@ -418,7 +427,10 @@ const AdminDashboard = () => {
             </div>
           </div>
 
-          <div className="bg-white dark:bg-dark-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-dark-700 flex items-center transition hover:shadow-md">
+          <div 
+            onClick={() => navigate('/admin/partners')}
+            className="bg-white dark:bg-dark-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-dark-700 flex items-center transition hover:shadow-md cursor-pointer"
+          >
             <div className="bg-orange-50 dark:bg-orange-900/20 p-4 rounded-xl mr-4 text-orange-600">
               <Truck size={28} />
             </div>

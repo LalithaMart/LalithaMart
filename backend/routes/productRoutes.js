@@ -11,7 +11,8 @@ import {
   deleteProduct,
   createProductReview,
   updateProductPriorities,
-  getInventoryStats
+  getInventoryStats,
+  toggleProductHold
 } from '../controllers/productController.js';
 import { protect, admin } from '../middleware/authMiddleware.js';
 
@@ -53,6 +54,8 @@ router.route('/:id')
   .get(asyncHandler(getProductById))
   .put(protect, admin, upload.array('images', 5), asyncHandler(updateProduct))
   .delete(protect, admin, asyncHandler(deleteProduct));
+
+router.route('/:id/hold').put(protect, admin, asyncHandler(toggleProductHold));
 
 router.route('/:id/reviews').post(protect, asyncHandler(createProductReview));
 

@@ -20,8 +20,9 @@ const getProducts = async (req, res) => {
     : {};
 
   const categoryFilter = req.query.category ? { category: req.query.category } : {};
+  const holdFilter = req.query.all === 'true' ? {} : { isOnHold: { $ne: true } };
 
-  const products = await Product.find({ ...keyword, ...categoryFilter })
+  const products = await Product.find({ ...keyword, ...categoryFilter, ...holdFilter })
     .populate('category', 'name')
     .sort({ priority: 1 })
     .lean();
@@ -276,6 +277,24 @@ const getInventoryStats = async (req, res) => {
   });
 };
 
+/**
+ * @desc    Toggle product hold status
+ * @route   PUT /api/products/:id/hold
+ * @access  Private/Admin
+ */
+const toggleProductHold = async (req, res) => {
+  const product = await Product.findById(req.params.id);
+
+  if (product) {
+    product.isOnHold = !product.isOnHold;
+    const updatedProduct = await product.save();
+    res.json(updatedProduct);
+  } else {
+    res.status(404);
+    throw new Error('Product not found');
+  }
+};
+
 export {
   getProducts,
   getProductById,
@@ -285,4 +304,5 @@ export {
   createProductReview,
   updateProductPriorities,
   getInventoryStats,
+  toggleProductHold
 };

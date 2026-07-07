@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import api from '../../services/api';
-import { Plus, Edit, Trash2, X, ChevronLeft, ChevronRight, Edit2, Search, Filter, Box, Camera } from 'lucide-react';
+import { Plus, Edit, Trash2, X, ChevronLeft, ChevronRight, Edit2, Search, Filter, Box, Camera, PauseCircle, PlayCircle } from 'lucide-react';
 import ProductImageCarousel from '../../components/ProductImageCarousel';
 import { useUIStore } from '../../store/uiStore';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -52,11 +52,14 @@ const Products = () => {
   });
 
   const [showLowStock, setShowLowStock] = useState(false);
+  const [showOnHold, setShowOnHold] = useState(false);
+  const [selectedFilterCategory, setSelectedFilterCategory] = useState('');
+  const [selectedFilterProduct, setSelectedFilterProduct] = useState('');
 
   const fetchData = async () => {
     try {
       const [prodRes, catRes, statsRes] = await Promise.all([
-        api.get('/products'),
+        api.get('/products?all=true'),
         api.get('/categories'),
         api.get('/products/inventory/stats')
       ]);
@@ -195,11 +198,33 @@ const Products = () => {
     }
   };
 
+  const handleToggleHold = async (product) => {
+    const action = product.isOnHold ? `make "${product.name}" live` : `put "${product.name}" on hold`;
+    if (window.confirm(`Are you sure you want to ${action}?`)) {
+      try {
+        await api.put(`/products/${product._id}/hold`);
+        fetchData();
+        showToast(`Product ${product.isOnHold ? 'is now live' : 'put on hold'}`, 'success');
+      } catch (error) {
+        console.error(error);
+        showToast('Failed to update product status', 'error');
+      }
+    }
+  };
+
   const filteredProducts = products.filter(p => {
     const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase()) || p.category?.name.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStock = showLowStock ? p.stock <= 5 : true;
-    return matchesSearch && matchesStock;
+    const matchesHold = showOnHold ? p.isOnHold : true; // Show all by default, only on hold if checked
+    const matchesCatDropdown = selectedFilterCategory ? p.category?._id === selectedFilterCategory : true;
+    const matchesProdDropdown = selectedFilterProduct ? p._id === selectedFilterProduct : true;
+    return matchesSearch && matchesStock && matchesHold && matchesCatDropdown && matchesProdDropdown;
   });
+
+  const sortedCategories = [...categories].sort((a, b) => a.name.localeCompare(b.name));
+  const productOptions = [...products]
+    .filter(p => selectedFilterCategory ? p.category?._id === selectedFilterCategory : true)
+    .sort((a, b) => a.name.localeCompare(b.name));
 
   return (
     <div className="space-y-6">
@@ -232,6 +257,29 @@ const Products = () => {
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
+          <select
+            value={selectedFilterCategory}
+            onChange={(e) => {
+              setSelectedFilterCategory(e.target.value);
+              setSelectedFilterProduct(''); // Reset product when category changes
+            }}
+            className="px-4 py-2 bg-transparent border border-gray-200 dark:border-dark-600 rounded-lg focus:ring-primary-500 focus:border-primary-500 text-gray-900 dark:text-gray-100 max-w-xs"
+          >
+            <option value="">All Categories</option>
+            {sortedCategories.map(cat => (
+              <option key={cat._id} value={cat._id}>{cat.name}</option>
+            ))}
+          </select>
+          <select
+            value={selectedFilterProduct}
+            onChange={(e) => setSelectedFilterProduct(e.target.value)}
+            className="px-4 py-2 bg-transparent border border-gray-200 dark:border-dark-600 rounded-lg focus:ring-primary-500 focus:border-primary-500 text-gray-900 dark:text-gray-100 max-w-xs"
+          >
+            <option value="">All Products</option>
+            {productOptions.map(p => (
+              <option key={p._id} value={p._id}>{p.name}</option>
+            ))}
+          </select>
           <label className="flex items-center space-x-2 cursor-pointer bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 px-3 py-2 rounded-lg border border-red-100 dark:border-red-900/30">
             <input 
               type="checkbox" 
@@ -240,6 +288,15 @@ const Products = () => {
               onChange={(e) => setShowLowStock(e.target.checked)} 
             />
             <span className="text-sm font-bold">Low Stock Alerts</span>
+          </label>
+          <label className="flex items-center space-x-2 cursor-pointer bg-orange-50 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400 px-3 py-2 rounded-lg border border-orange-100 dark:border-orange-900/30">
+            <input 
+              type="checkbox" 
+              className="rounded text-orange-600 dark:text-orange-500 focus:ring-orange-500" 
+              checked={showOnHold} 
+              onChange={(e) => setShowOnHold(e.target.checked)} 
+            />
+            <span className="text-sm font-bold">Products on Hold</span>
           </label>
           <button
             onClick={() => { setShowForm(!showForm); setEditingId(null); setFormData({ name: '', price: '', discountPrice: '', unit: 'pcs', sku: '', description: '', category: categories[0]?._id, stock: '', images: null }); }}
@@ -462,7 +519,7 @@ const Products = () => {
                                 />
                               </div>
                               <div>
-                                <p className="font-medium text-gray-800 dark:text-gray-100">{product.name} {product.priority > 0 && <span className="text-xs text-primary-600 dark:text-primary-400 font-bold ml-1">P{product.priority}</span>}</p>
+                                <p className="font-medium text-gray-800 dark:text-gray-100">{product.name} {product.priority > 0 && <span className="text-xs text-primary-600 dark:text-primary-400 font-bold ml-1">P{product.priority}</span>} {product.isOnHold && <span className="text-xs bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400 px-2 py-0.5 rounded-full font-bold ml-2">On Hold</span>}</p>
                                 {product.productId && <p className="text-xs text-gray-400 font-mono">{product.productId}</p>}
                                 <p className="text-xs text-gray-500 dark:text-gray-400 truncate w-48">{product.description}</p>
                               </div>
@@ -475,6 +532,13 @@ const Products = () => {
                           </td>
                           <td className="p-4 text-sm text-gray-600 dark:text-gray-300">{product.stock}</td>
                           <td className="p-4 text-right">
+                            <button 
+                              onClick={() => handleToggleHold(product)} 
+                              className={`p-2 rounded-lg mr-1 ${product.isOnHold ? 'text-orange-500 hover:bg-orange-50 dark:hover:bg-orange-900/30' : 'text-green-600 hover:bg-green-50 dark:hover:bg-green-900/30'}`}
+                              title={product.isOnHold ? "Go Live" : "Hold Product"}
+                            >
+                              {product.isOnHold ? <PlayCircle size={18} /> : <PauseCircle size={18} />}
+                            </button>
                             <button onClick={() => handleEditClick(product)} className="p-2 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg mr-1"><Edit size={18} /></button>
                             <button onClick={() => handleDelete(product._id)} className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg"><Trash2 size={18} /></button>
                           </td>

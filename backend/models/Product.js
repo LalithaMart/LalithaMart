@@ -70,6 +70,10 @@ const productSchema = mongoose.Schema(
       type: Number,
       default: 0,
     },
+    isOnHold: {
+      type: Boolean,
+      default: false,
+    },
   },
   {
     timestamps: true,

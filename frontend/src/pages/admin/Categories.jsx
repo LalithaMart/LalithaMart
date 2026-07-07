@@ -16,6 +16,7 @@ const Categories = () => {
   const [formData, setFormData] = useState({ name: '', description: '', priority: 0, isActive: true, image: null });
   const [editingId, setEditingId] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedFilterCategory, setSelectedFilterCategory] = useState('');
   const [fullscreenImage, setFullscreenImage] = useState(null);
 
   const fetchCategories = async () => {
@@ -115,6 +116,16 @@ const Categories = () => {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
+          <select
+            value={selectedFilterCategory}
+            onChange={(e) => setSelectedFilterCategory(e.target.value)}
+            className="px-4 py-2 border dark:border-dark-600 bg-white dark:bg-dark-900 text-gray-900 dark:text-white rounded-lg focus:ring-primary-500 focus:border-primary-500 max-w-xs"
+          >
+            <option value="">All Categories</option>
+            {[...categories].sort((a, b) => a.name.localeCompare(b.name)).map(cat => (
+              <option key={cat._id} value={cat._id}>{cat.name}</option>
+            ))}
+          </select>
           <button
             onClick={() => setShowForm(!showForm)}
             className="flex items-center bg-primary-600 whitespace-nowrap text-white px-4 py-2 rounded-lg hover:bg-primary-700 transition"
@@ -290,7 +301,11 @@ const Categories = () => {
         <p className="text-gray-500 dark:text-gray-400">Loading categories...</p>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-4 gap-6">
-          {categories.filter(cat => cat.name.toLowerCase().includes(searchQuery.toLowerCase()) || (cat.priority && cat.priority.toString().includes(searchQuery))).sort((a,b) => (a.priority || 0) - (b.priority || 0)).map((cat) => (
+          {categories
+            .filter(cat => cat.name.toLowerCase().includes(searchQuery.toLowerCase()) || (cat.priority && cat.priority.toString().includes(searchQuery)))
+            .filter(cat => selectedFilterCategory ? cat._id === selectedFilterCategory : true)
+            .sort((a,b) => (a.priority || 0) - (b.priority || 0))
+            .map((cat) => (
             <div key={cat._id} className="bg-white dark:bg-dark-800 rounded-xl shadow-sm border border-gray-100 dark:border-dark-700 overflow-hidden">
               <div className="relative">
                 <img src={cat.image?.startsWith('http') ? cat.image : `${import.meta.env.VITE_BACKEND_URL || "http://localhost:5000"}${cat.image}`} alt={cat.name} className="w-full h-40 object-cover" />
