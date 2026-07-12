@@ -1,6 +1,7 @@
 import { Server } from 'socket.io';
 import { createAdapter } from '@socket.io/redis-adapter';
 import { pubClient, subClient } from './redis.js';
+import User from '../models/User.js';
 
 let io;
 
@@ -29,12 +30,21 @@ export const initSocket = (server) => {
     });
 
     // Location update from delivery partner
-    socket.on('location-update', (data) => {
-      // Broadcast location update to the specific order room or admin
-      if (data.orderId) {
-        socket.to(`order-${data.orderId}`).emit('partner-location', data);
+    socket.on('location-update', async (data) => {
+      // Global broadcast so Admin and Customer can track in real-time.
+      // Frontend components filter by partnerId.
+      io.emit('partner-location-update', data);
+      
+      // Save to database so initial loads fetch the correct location
+      try {
+        if (data.partnerId) {
+          await User.findByIdAndUpdate(data.partnerId, {
+            liveLocation: { lat: data.lat, lng: data.lng, updatedAt: Date.now() }
+          });
+        }
+      } catch (err) {
+        console.error('Failed to update live location in DB via socket:', err);
       }
-      socket.to('admin-room').emit('partner-location', data);
     });
 
     // Join specific order room (for customers tracking an order)

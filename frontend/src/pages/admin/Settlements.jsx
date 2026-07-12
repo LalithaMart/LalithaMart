@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../services/api';
 import { useUIStore } from '../../store/uiStore';
-import { FileText, Calendar, DollarSign, Wallet, CreditCard, CheckCircle, Clock, Filter } from 'lucide-react';
+import { FileText, Calendar, DollarSign, Wallet, CreditCard, CheckCircle, Clock, Filter, Phone } from 'lucide-react';
 
 const Settlements = () => {
   const [reportData, setReportData] = useState([]);
@@ -286,7 +286,10 @@ const Settlements = () => {
                           </div>
                           <div>
                             <p className="font-bold text-gray-800 dark:text-gray-100">{row.partner.name}</p>
-                            <p className="text-xs text-gray-500 dark:text-gray-400">{row.partner.phone}</p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 flex items-center">
+                              <a href={`tel:${row.partner.phone}`} className="mr-1 text-green-500 hover:text-green-600 bg-green-50 dark:bg-green-900/20 p-1 rounded-full"><Phone size={10} /></a>
+                              {row.partner.phone}
+                            </p>
                           </div>
                         </div>
                       </td>

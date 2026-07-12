@@ -95,19 +95,23 @@ const Checkout = () => {
   const [newAddress, setNewAddress] = useState({ street: '', city: '', state: '', postalCode: '', country: 'India', location: { lat: 17.3850, lng: 78.4867 } });
   const [showAddressForm, setShowAddressForm] = useState(false);
   
+  const [storeSettings, setStoreSettings] = useState(null);
+  
   const navigate = useNavigate();
   const { showToast } = useUIStore();
-  const { setCredentials } = useAuthStore();
+  const { setCredentials, user } = useAuthStore();
 
   useEffect(() => {
     const fetchCheckoutData = async () => {
       try {
-        const [cartRes, userRes] = await Promise.all([
+        const [cartRes, userRes, settingsRes] = await Promise.all([
           api.get('/cart'),
-          api.get('/users/profile')
+          api.get('/users/profile'),
+          api.get('/settings')
         ]);
         
         setCart(cartRes.data);
+        setStoreSettings(settingsRes.data);
         setAddresses(userRes.data.savedAddresses || []);
         
         if (userRes.data.savedAddresses?.length > 0) {
@@ -180,10 +184,19 @@ const Checkout = () => {
   };
 
   const calculateTotal = () => {
-    return cart.items.reduce((total, item) => {
+    const subtotal = cart.items.reduce((total, item) => {
       const priceToUse = item.product.discountPrice > 0 ? item.product.discountPrice : item.product.price;
       return total + (priceToUse * item.quantity);
     }, 0);
+    return subtotal;
+  };
+
+  const getDeliveryFee = () => {
+    if (!storeSettings) return 0;
+    const fee = user?.customDeliveryFee !== undefined && user?.customDeliveryFee !== null ? user.customDeliveryFee : storeSettings.defaultDeliveryFee;
+    const freeAt = user?.customFreeDeliveryCartValue !== undefined && user?.customFreeDeliveryCartValue !== null ? user.customFreeDeliveryCartValue : storeSettings.defaultFreeDeliveryCartValue;
+    const subtotal = calculateTotal();
+    return subtotal >= freeAt ? 0 : fee;
   };
 
   const handlePlaceOrder = async () => {
@@ -204,7 +217,7 @@ const Checkout = () => {
         orderItems,
         deliveryAddress: selectedAddress,
         paymentMethod: 'COD',
-        totalAmount: calculateTotal()
+        totalAmount: calculateTotal() + getDeliveryFee()
       });
 
       setOrderPlaced(true);
@@ -401,13 +414,15 @@ const Checkout = () => {
               </div>
               <div className="flex justify-between items-center">
                 <span>Delivery Fee</span>
-                <span className="text-green-600 dark:text-green-400 font-bold bg-green-50 dark:bg-green-900/20 px-2 py-0.5 rounded-md text-sm">Free</span>
+                <span className="text-green-600 dark:text-green-400 font-bold bg-green-50 dark:bg-green-900/20 px-2 py-0.5 rounded-md text-sm">
+                  {getDeliveryFee() === 0 ? 'Free' : `₹${getDeliveryFee()}`}
+                </span>
               </div>
             </div>
             
             <div className="flex justify-between items-center pt-6 border-t border-gray-100 dark:border-dark-700 mb-8">
               <span className="text-xl font-bold text-gray-800 dark:text-gray-200">Total</span>
-              <span className="text-3xl font-black text-primary-600 dark:text-primary-400">₹{calculateTotal().toFixed(2)}</span>
+              <span className="text-3xl font-black text-primary-600 dark:text-primary-400">₹{(calculateTotal() + getDeliveryFee()).toFixed(2)}</span>
             </div>
             
             <button 

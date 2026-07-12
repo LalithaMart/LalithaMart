@@ -55,6 +55,28 @@ const orderSchema = mongoose.Schema(
       required: true,
       default: 0.0,
     },
+    deliveryFeeApplied: {
+      type: Number,
+      default: 0,
+    },
+    deliveryFeeSource: {
+      type: String,
+      enum: ['Global', 'Individual'],
+      default: 'Global',
+    },
+    freeDeliveryApplied: {
+      type: Boolean,
+      default: false,
+    },
+    partnerEarningApplied: {
+      type: Number,
+      default: 0,
+    },
+    partnerEarningSource: {
+      type: String,
+      enum: ['Global', 'Individual'],
+      default: 'Global',
+    },
     status: {
       type: String,
       required: true,

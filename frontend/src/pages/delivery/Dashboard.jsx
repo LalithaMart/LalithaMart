@@ -124,24 +124,27 @@ const DeliveryDashboard = () => {
     let watchId;
     if (user?.isAvailable && navigator.geolocation) {
       watchId = navigator.geolocation.watchPosition(
-        async (position) => {
+        (position) => {
           try {
-            await api.put('/users/location', {
-              lat: position.coords.latitude,
-              lng: position.coords.longitude
-            });
+            if (socket) {
+              socket.emit('location-update', {
+                partnerId: user._id,
+                lat: position.coords.latitude,
+                lng: position.coords.longitude
+              });
+            }
           } catch (e) {
-            console.error('Failed to update live location', e);
+            console.error('Failed to emit live location', e);
           }
         },
         (err) => console.warn('Geolocation error:', err),
-        { enableHighAccuracy: true, maximumAge: 10000, timeout: 5000 }
+        { enableHighAccuracy: true, maximumAge: 1000, timeout: 5000 }
       );
     }
     return () => {
       if (watchId) navigator.geolocation.clearWatch(watchId);
     };
-  }, [user?.isAvailable]);
+  }, [user?.isAvailable, socket]);
 
   const handleUpdateStatus = async (id, status) => {
     try {
@@ -211,7 +214,7 @@ const DeliveryDashboard = () => {
     const orderDate = new Date(o.updatedAt);
     return orderDate >= today;
   });
-  const earnings = completedOrders.length * 40; // Assuming ₹40 per delivery
+  const earnings = completedOrders.reduce((sum, order) => sum + (order.partnerEarningApplied || 40), 0);
 
   return (
     <motion.div 
@@ -235,7 +238,9 @@ const DeliveryDashboard = () => {
           </div>
           <div className="flex justify-between items-center text-sm font-bold bg-white/10 p-4 rounded-2xl backdrop-blur-sm border border-white/10">
             <span className="flex items-center"><CheckCircle size={16} className="mr-2" /> Deliveries: {completedOrders.length}</span>
-            <span className="bg-white text-primary-700 px-3 py-1.5 rounded-xl drop-shadow-sm">+ ₹40/del</span>
+            <span className="bg-white text-primary-700 px-3 py-1.5 rounded-xl drop-shadow-sm font-bold shadow-sm">
+              Fee Computed Dynamically
+            </span>
           </div>
         </div>
       </motion.div>

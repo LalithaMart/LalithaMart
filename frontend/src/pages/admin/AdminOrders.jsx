@@ -7,6 +7,81 @@ import { useAuthStore } from '../../store/authStore';
 import { Search, ChevronLeft, ChevronRight, ShoppingBag, Eye, UserPlus, X, Truck, MapPin, Phone, CheckCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { fadeUp, staggerContainer } from '../../animations/variants';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
+
+// Custom icons
+const customerIcon = L.divIcon({
+  className: 'custom-icon',
+  html: `<div style="background-color: #ef4444; width: 24px; height: 24px; border-radius: 50%; border: 3px solid white; box-shadow: 0 0 8px rgba(239, 68, 68, 0.6);"></div>`,
+  iconSize: [24, 24],
+  iconAnchor: [12, 12]
+});
+
+const deliveryIcon = L.divIcon({
+  className: 'custom-icon',
+  html: `<div style="background-color: #3b82f6; width: 36px; height: 36px; border-radius: 50%; border: 3px solid white; box-shadow: 0 0 10px rgba(59, 130, 246, 0.6); display: flex; align-items: center; justify-content: center; font-size: 16px;">🛵</div>`,
+  iconSize: [36, 36],
+  iconAnchor: [18, 18]
+});
+
+function NativeTrackingMap({ customerLocation, partnerLocation }) {
+  const mapRef = React.useRef(null);
+  const mapInstance = React.useRef(null);
+  const customerMarkerInstance = React.useRef(null);
+  const partnerMarkerInstance = React.useRef(null);
+  const polylineInstance = React.useRef(null);
+
+  React.useEffect(() => {
+    if (!mapRef.current) return;
+    
+    const centerLat = partnerLocation ? partnerLocation.lat : customerLocation.lat;
+    const centerLng = partnerLocation ? partnerLocation.lng : customerLocation.lng;
+
+    if (!mapInstance.current) {
+      mapInstance.current = L.map(mapRef.current).setView([centerLat, centerLng], 14);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap'
+      }).addTo(mapInstance.current);
+
+      customerMarkerInstance.current = L.marker([customerLocation.lat, customerLocation.lng], { icon: customerIcon })
+        .addTo(mapInstance.current)
+        .bindPopup('<div style="font-weight: bold; font-family: sans-serif;">Delivery Address</div>');
+    }
+
+    if (partnerLocation) {
+      if (partnerMarkerInstance.current) {
+        partnerMarkerInstance.current.setLatLng([partnerLocation.lat, partnerLocation.lng]);
+      } else {
+        partnerMarkerInstance.current = L.marker([partnerLocation.lat, partnerLocation.lng], { icon: deliveryIcon })
+          .addTo(mapInstance.current)
+          .bindPopup('<div style="font-weight: bold; font-family: sans-serif; color: #3b82f6;">Delivery Partner</div>');
+      }
+
+      const linePoints = [
+        [partnerLocation.lat, partnerLocation.lng],
+        [customerLocation.lat, customerLocation.lng]
+      ];
+
+      if (polylineInstance.current) {
+        polylineInstance.current.setLatLngs(linePoints);
+      } else {
+        polylineInstance.current = L.polyline(linePoints, { color: '#3b82f6', dashArray: '5, 10', weight: 4 }).addTo(mapInstance.current);
+      }
+    }
+  }, [customerLocation, partnerLocation]);
+
+  React.useEffect(() => {
+    return () => {
+      if (mapInstance.current) {
+        mapInstance.current.remove();
+        mapInstance.current = null;
+      }
+    };
+  }, []);
+
+  return <div ref={mapRef} className="w-full h-full" />;
+}
 
 const AdminOrders = () => {
   const location = useLocation();
@@ -37,6 +112,7 @@ const AdminOrders = () => {
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [partners, setPartners] = useState([]);
   const [assigning, setAssigning] = useState(false);
+  const [partnerLocation, setPartnerLocation] = useState(null);
 
   // If we came from a notification, we might want to open a specific order
   useEffect(() => {
@@ -46,6 +122,21 @@ const AdminOrders = () => {
       fetchOrderDetails(orderIdToOpen);
     }
   }, [location.search]);
+
+  // Live Location listener for open order
+  useEffect(() => {
+    if (socket && selectedOrder?.deliveryPartner) {
+      const handleLocationUpdate = (data) => {
+        if (data.partnerId === selectedOrder.deliveryPartner._id) {
+          setPartnerLocation({ lat: data.lat, lng: data.lng });
+        }
+      };
+      socket.on('partner-location-update', handleLocationUpdate);
+      return () => {
+        socket.off('partner-location-update', handleLocationUpdate);
+      };
+    }
+  }, [socket, selectedOrder]);
 
   const fetchOrderDetails = async (id) => {
     try {
@@ -68,6 +159,7 @@ const AdminOrders = () => {
 
   const handleCloseModal = () => {
     setSelectedOrder(null);
+    setPartnerLocation(null);
     if (location.search.includes('open=')) {
       navigate('/admin/orders', { replace: true });
     }
@@ -190,8 +282,34 @@ const AdminOrders = () => {
   }, [socket, fetchOrders, selectedOrder]);
 
   const handleStatusChange = async (orderId, newStatus) => {
+    if (newStatus === 'Assigned') {
+      const orderToAssign = orders.find(o => o._id === orderId);
+      if (orderToAssign) {
+        setSelectedOrder(orderToAssign);
+        showToast('Please assign a partner from the order details', 'info');
+      }
+      setOrders([...orders]); // Force reset of dropdown
+      return;
+    }
+
+    let payload = { status: newStatus };
+
+    if (newStatus === 'Cancelled') {
+      const reason = window.prompt('Please enter a reason for cancellation:');
+      if (reason === null) {
+        setOrders([...orders]);
+        return;
+      }
+      payload.cancelReason = reason || 'Cancelled by Admin';
+    } else {
+      if (!window.confirm(`Are you sure you want to change the status to ${newStatus}?`)) {
+        setOrders([...orders]); // Force reset of dropdown
+        return;
+      }
+    }
+
     try {
-      await api.put(`/orders/${orderId}/status`, { status: newStatus });
+      await api.put(`/orders/${orderId}/status`, payload);
       showToast('Order status updated', 'success');
       fetchOrders();
       if (selectedOrder && selectedOrder._id === orderId) {
@@ -403,7 +521,8 @@ const AdminOrders = () => {
                     <td className="p-5">
                       <div className="font-bold text-gray-800 dark:text-gray-200">{order.customer?.name}</div>
                       <div className="text-gray-500 dark:text-gray-400 text-xs font-medium mt-1 flex items-center">
-                        <Phone size={10} className="mr-1" /> {order.customer?.phone}
+                        <a href={`tel:${order.customer?.phone}`} onClick={(e) => e.stopPropagation()} className="mr-1 text-green-500 hover:text-green-600 bg-green-50 p-1 rounded-full"><Phone size={10} /></a>
+                        {order.customer?.phone}
                       </div>
                     </td>
                     <td className="p-5 text-sm font-medium text-gray-600 dark:text-gray-400">
@@ -419,7 +538,7 @@ const AdminOrders = () => {
                         value={order.status}
                         onChange={(e) => handleStatusChange(order._id, e.target.value)}
                         className={`text-xs font-black rounded-xl px-3 py-1.5 border focus:ring-2 outline-none cursor-pointer ${getStatusColor(order.status)}`}
-                        disabled={['Out for Delivery', 'Delivered', 'Completed'].includes(order.status)}
+                        disabled={['Out for Delivery', 'Delivered', 'Completed', 'Cancelled'].includes(order.status) || new Date(order.createdAt).toDateString() !== new Date().toDateString()}
                       >
                         <option value="Pending">Pending</option>
                         <option value="Assigned">Assigned</option>
@@ -434,7 +553,10 @@ const AdminOrders = () => {
                       {order.deliveryPartner ? (
                         <div>
                           <div className="font-bold text-gray-800 dark:text-gray-200">{order.deliveryPartner.name}</div>
-                          <div className="text-xs font-medium mt-1">{order.deliveryPartner.phone}</div>
+                          <div className="text-xs font-medium mt-1 flex items-center">
+                            <a href={`tel:${order.deliveryPartner.phone}`} onClick={(e) => e.stopPropagation()} className="mr-1 text-green-500 hover:text-green-600 bg-green-50 p-1 rounded-full"><Phone size={10} /></a>
+                            {order.deliveryPartner.phone}
+                          </div>
                         </div>
                       ) : (
                         <span className="inline-block px-2 py-1 bg-gray-100 dark:bg-dark-700 text-gray-500 dark:text-gray-400 text-xs font-bold rounded-lg uppercase">Unassigned</span>
@@ -636,6 +758,27 @@ const AdminOrders = () => {
                   </div>
                 </div>
 
+                {/* Live Tracking Map for Admin */}
+                {isOrderAssigned && selectedOrder.status === 'Out for Delivery' && selectedOrder.deliveryAddress?.location && (
+                  <div className="space-y-4">
+                    <h3 className="text-xs font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest border-b border-gray-100 dark:border-dark-700 pb-2">Live Tracking</h3>
+                    <div className="h-64 w-full bg-gray-50 dark:bg-dark-900 rounded-2xl overflow-hidden border-2 border-gray-200 dark:border-dark-700 relative z-0 shadow-inner">
+                      <NativeTrackingMap 
+                        customerLocation={selectedOrder.deliveryAddress.location}
+                        partnerLocation={partnerLocation}
+                      />
+                      {partnerLocation && (
+                        <div className="absolute top-3 left-3 right-3 z-10 flex justify-center pointer-events-none">
+                          <div className="bg-white/90 dark:bg-dark-800/90 backdrop-blur-md px-4 py-1.5 rounded-full shadow-lg border border-gray-100 dark:border-dark-700 flex items-center">
+                            <div className="w-2 h-2 bg-green-500 rounded-full animate-ping mr-2"></div>
+                            <span className="text-xs font-bold text-gray-900 dark:text-white">Partner Location Live</span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
                 {/* Customer Details */}
                 <div className="space-y-4">
                   <h3 className="text-xs font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest border-b border-gray-100 dark:border-dark-700 pb-2">Customer Info</h3>
@@ -648,7 +791,8 @@ const AdminOrders = () => {
                     </button>
                     <p className="font-bold text-gray-900 dark:text-white text-lg">{selectedOrder.customer?.name}</p>
                     <div className="flex items-center text-sm font-medium text-gray-600 dark:text-gray-400">
-                      <Phone size={14} className="mr-2 text-gray-400" /> {selectedOrder.customer?.phone}
+                      <a href={`tel:${selectedOrder.customer?.phone}`} className="mr-2 text-green-500 hover:text-green-600 bg-green-50 dark:bg-green-900/20 p-1.5 rounded-full"><Phone size={14} /></a>
+                      {selectedOrder.customer?.phone}
                     </div>
                     <div className="flex items-start text-sm font-medium text-gray-600 dark:text-gray-400 pt-2 border-t border-gray-200 dark:border-dark-700">
                       <MapPin size={14} className="mr-2 mt-1 text-gray-400 shrink-0" /> 

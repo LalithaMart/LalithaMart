@@ -1,8 +1,10 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Trash2, Plus, Minus, ShoppingBag, ArrowRight } from 'lucide-react';
 import { useCartStore } from '../../store/cartStore';
 import { useUIStore } from '../../store/uiStore';
+import { useAuthStore } from '../../store/authStore';
+import api from '../../services/api';
 import { motion, AnimatePresence } from 'framer-motion';
 import { fadeUp, staggerContainer } from '../../animations/variants';
 
@@ -10,9 +12,12 @@ const Cart = () => {
   const navigate = useNavigate();
   const { items, fetchCart, updateQuantity, removeFromCart, clearCart, loading } = useCartStore();
   const { showToast } = useUIStore();
+  const { user } = useAuthStore();
+  const [storeSettings, setStoreSettings] = useState(null);
 
   useEffect(() => {
     fetchCart();
+    api.get('/settings').then(res => setStoreSettings(res.data)).catch(console.error);
   }, [fetchCart]);
 
   const calculateTotal = () => {
@@ -137,13 +142,31 @@ const Cart = () => {
                 </div>
                 <div className="flex justify-between items-center">
                   <span>Delivery Fee</span>
-                  <span className="text-green-600 dark:text-green-400 font-bold bg-green-50 dark:bg-green-900/20 px-2 py-0.5 rounded-md text-sm">Free</span>
+                  <span className="text-green-600 dark:text-green-400 font-bold bg-green-50 dark:bg-green-900/20 px-2 py-0.5 rounded-md text-sm">
+                    {(() => {
+                      if (!storeSettings) return '...';
+                      const fee = user?.customDeliveryFee !== undefined && user?.customDeliveryFee !== null ? user.customDeliveryFee : storeSettings.defaultDeliveryFee;
+                      const freeAt = user?.customFreeDeliveryCartValue !== undefined && user?.customFreeDeliveryCartValue !== null ? user.customFreeDeliveryCartValue : storeSettings.defaultFreeDeliveryCartValue;
+                      const subtotal = calculateTotal();
+                      if (subtotal >= freeAt) return 'Free';
+                      return `₹${fee}`;
+                    })()}
+                  </span>
                 </div>
               </div>
               
               <div className="flex justify-between items-center pt-6 border-t border-gray-100 dark:border-dark-700 mb-8">
                 <span className="text-xl font-bold text-gray-800 dark:text-gray-200">Total</span>
-                <span className="text-3xl font-black text-primary-600 dark:text-primary-400">₹{calculateTotal().toFixed(2)}</span>
+                <span className="text-3xl font-black text-primary-600 dark:text-primary-400">
+                  ₹{(() => {
+                    const subtotal = calculateTotal();
+                    if (!storeSettings) return subtotal.toFixed(2);
+                    const fee = user?.customDeliveryFee !== undefined && user?.customDeliveryFee !== null ? user.customDeliveryFee : storeSettings.defaultDeliveryFee;
+                    const freeAt = user?.customFreeDeliveryCartValue !== undefined && user?.customFreeDeliveryCartValue !== null ? user.customFreeDeliveryCartValue : storeSettings.defaultFreeDeliveryCartValue;
+                    const delivery = subtotal >= freeAt ? 0 : fee;
+                    return (subtotal + delivery).toFixed(2);
+                  })()}
+                </span>
               </div>
               
               <button 

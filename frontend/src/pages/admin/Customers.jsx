@@ -4,6 +4,7 @@ import api from '../../services/api';
 import { Mail, Phone, MapPin, Package, X } from 'lucide-react';
 import { useUIStore } from '../../store/uiStore';
 import { useAuthStore } from '../../store/authStore';
+import GlobalDeliverySettingsWidget from '../../components/admin/GlobalDeliverySettingsWidget';
 
 const Customers = () => {
   const [customers, setCustomers] = useState([]);
@@ -83,6 +84,7 @@ const Customers = () => {
 
   return (
     <div className="space-y-6 relative">
+      <GlobalDeliverySettingsWidget hidePartnerEarning={true} />
       <div className="bg-white dark:bg-dark-800 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-dark-700 flex flex-col md:flex-row justify-between md:items-center gap-4">
         <div>
           <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">Customers List</h2>
@@ -134,7 +136,17 @@ const Customers = () => {
                   {customer.name.charAt(0)}
                 </div>
                 <div>
-                  <h3 className="font-bold text-gray-800 dark:text-gray-100">{customer.name}</h3>
+                  <h3 className="font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">
+                    {customer.name}
+                    <a 
+                      href={`tel:${customer.phone}`} 
+                      onClick={(e) => e.stopPropagation()} 
+                      className="text-green-500 hover:text-green-600 bg-green-50 dark:bg-green-900/20 p-1.5 rounded-full transition-colors"
+                      title="Call Customer"
+                    >
+                      <Phone size={14} />
+                    </a>
+                  </h3>
                   <p className="text-sm text-gray-500 dark:text-gray-400">ID: {customer.customerId || 'Pending'}</p>
                 </div>
               </div>
@@ -165,28 +177,33 @@ const Customers = () => {
                     </div>
                   </div>
                   <div className="flex space-x-2">
-                    <button 
-                      onClick={async (e) => {
-                        e.stopPropagation();
-                        try {
-                          await api.put(`/users/${customer._id}`, { isBlocked: !customer.isBlocked });
-                          const { data } = await api.get('/users?role=customer');
-                          setCustomers(data);
-                          showToast('Customer status updated', 'success');
-                        } catch (error) {
-                          showToast('Failed to update customer status', 'error');
-                        }
-                      }}
-                      className={`px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap inline-block ${customer.isBlocked ? 'bg-red-100 text-red-700 dark:text-red-400' : 'bg-gray-100 text-gray-700 dark:text-gray-300 hover:bg-red-50 dark:bg-red-900/20 hover:text-red-700 dark:text-red-400'}`}
-                    >
-                      {customer.isBlocked ? 'Blocked' : 'Block'}
-                    </button>
-                    <button 
-                      onClick={(e) => handleDeleteCustomer(e, customer._id)}
-                      className="px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap inline-block bg-red-50 dark:bg-red-900/20 text-red-600 hover:bg-red-100"
-                    >
-                      Delete
-                    </button>
+                    {customer.role !== 'admin' && (
+                      <>
+                        <button 
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            if (!window.confirm(`Are you sure you want to ${customer.isBlocked ? 'unblock' : 'block'} this customer?`)) return;
+                            try {
+                              await api.put(`/users/${customer._id}`, { isBlocked: !customer.isBlocked });
+                              const { data } = await api.get('/users?role=customer');
+                              setCustomers(data);
+                              showToast('Customer status updated', 'success');
+                            } catch (error) {
+                              showToast('Failed to update customer status', 'error');
+                            }
+                          }}
+                          className={`px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap inline-block ${customer.isBlocked ? 'bg-red-100 text-red-700 dark:text-red-400' : 'bg-gray-100 text-gray-700 dark:text-gray-300 hover:bg-red-50 dark:bg-red-900/20 hover:text-red-700 dark:text-red-400'}`}
+                        >
+                          {customer.isBlocked ? 'Blocked' : 'Block'}
+                        </button>
+                        <button 
+                          onClick={(e) => handleDeleteCustomer(e, customer._id)}
+                          className="px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap inline-block bg-red-50 dark:bg-red-900/20 text-red-600 hover:bg-red-100"
+                        >
+                          Delete
+                        </button>
+                      </>
+                    )}
                   </div>
                 </div>
               </div>
@@ -276,14 +293,55 @@ const Customers = () => {
                           email: selectedCustomer.email
                         });
                         setCustomers(customers.map(c => c._id === data._id ? {...c, ...data} : c));
-                        showToast('Customer details updated', 'success');
+                        showToast('Profile details updated', 'success');
                       } catch (error) {
                         showToast('Failed to update details', 'error');
                       }
                     }}
-                    className="w-full bg-primary-600 text-white font-bold py-2 rounded-lg text-sm hover:bg-primary-700"
+                    className="w-full bg-primary-600 text-white font-bold py-2 rounded-lg text-sm hover:bg-primary-700 mb-4"
                   >
-                    Save Changes
+                    Save Profile Changes
+                  </button>
+
+                  <h4 className="font-bold text-sm text-gray-700 dark:text-gray-300 mt-4 mb-2 uppercase tracking-wide border-t border-gray-200 dark:border-dark-700 pt-4">Delivery Configurations</h4>
+                  <div className="grid grid-cols-2 gap-2 mt-2">
+                    <div>
+                      <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Delivery Fee (Override)</label>
+                      <input 
+                        type="number" 
+                        placeholder="Global Default"
+                        className="w-full px-3 py-2 border dark:border-dark-600 bg-white dark:bg-dark-900 text-gray-900 dark:text-white rounded-lg text-sm"
+                        value={selectedCustomer.customDeliveryFee !== null && selectedCustomer.customDeliveryFee !== undefined ? selectedCustomer.customDeliveryFee : ''}
+                        onChange={(e) => setSelectedCustomer({...selectedCustomer, customDeliveryFee: e.target.value === '' ? null : Number(e.target.value)})}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Free Delivery Min (Override)</label>
+                      <input 
+                        type="number" 
+                        placeholder="Global Default"
+                        className="w-full px-3 py-2 border dark:border-dark-600 bg-white dark:bg-dark-900 text-gray-900 dark:text-white rounded-lg text-sm"
+                        value={selectedCustomer.customFreeDeliveryCartValue !== null && selectedCustomer.customFreeDeliveryCartValue !== undefined ? selectedCustomer.customFreeDeliveryCartValue : ''}
+                        onChange={(e) => setSelectedCustomer({...selectedCustomer, customFreeDeliveryCartValue: e.target.value === '' ? null : Number(e.target.value)})}
+                      />
+                    </div>
+                  </div>
+                  <button 
+                    onClick={async () => {
+                      try {
+                        const { data } = await api.put(`/users/${selectedCustomer._id}`, { 
+                          customDeliveryFee: selectedCustomer.customDeliveryFee,
+                          customFreeDeliveryCartValue: selectedCustomer.customFreeDeliveryCartValue
+                        });
+                        setCustomers(customers.map(c => c._id === data._id ? {...c, ...data} : c));
+                        showToast('Custom delivery fees updated', 'success');
+                      } catch (error) {
+                        showToast('Failed to update delivery fees', 'error');
+                      }
+                    }}
+                    className="w-full bg-blue-600 text-white font-bold py-2 rounded-lg text-sm hover:bg-blue-700 mt-3"
+                  >
+                    Save Delivery Fees
                   </button>
                 </div>
               </div>

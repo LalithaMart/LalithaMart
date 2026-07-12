@@ -1,11 +1,56 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import api from '../../services/api';
-import { Plus, CheckCircle, XCircle, Package, X } from 'lucide-react';
+import { Plus, CheckCircle, XCircle, Package, X, Phone, MapPin, Maximize, Minimize } from 'lucide-react';
 import { useUIStore } from '../../store/uiStore';
 
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
 import { useSocketStore } from '../../store/socketStore';
+import GlobalDeliverySettingsWidget from '../../components/admin/GlobalDeliverySettingsWidget';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
+
+const deliveryIcon = L.divIcon({
+  className: 'custom-icon',
+  html: `<div style="background-color: #3b82f6; width: 36px; height: 36px; border-radius: 50%; border: 3px solid white; box-shadow: 0 0 10px rgba(59, 130, 246, 0.6); display: flex; align-items: center; justify-content: center; font-size: 16px;">🛵</div>`,
+  iconSize: [36, 36],
+  iconAnchor: [18, 18]
+});
+
+function NativeSingleMarkerMap({ location }) {
+  const mapRef = useRef(null);
+  const mapInstance = useRef(null);
+  const markerInstance = useRef(null);
+
+  useEffect(() => {
+    if (!mapRef.current || !location) return;
+
+    if (!mapInstance.current) {
+      mapInstance.current = L.map(mapRef.current).setView([location.lat, location.lng], 15);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap'
+      }).addTo(mapInstance.current);
+
+      markerInstance.current = L.marker([location.lat, location.lng], { icon: deliveryIcon })
+        .addTo(mapInstance.current)
+        .bindPopup('<div style="font-weight: bold; font-family: sans-serif; color: #3b82f6;">Delivery Partner</div>');
+    } else {
+      markerInstance.current.setLatLng([location.lat, location.lng]);
+      mapInstance.current.setView([location.lat, location.lng]);
+    }
+  }, [location]);
+
+  useEffect(() => {
+    return () => {
+      if (mapInstance.current) {
+        mapInstance.current.remove();
+        mapInstance.current = null;
+      }
+    };
+  }, []);
+
+  return <div ref={mapRef} className="w-full h-full" />;
+}
 
 const Partners = () => {
   const [partners, setPartners] = useState([]);
@@ -18,11 +63,26 @@ const Partners = () => {
   const [selectedPartner, setSelectedPartner] = useState(null);
   const [partnerDeliveries, setPartnerDeliveries] = useState([]);
   const [loadingDeliveries, setLoadingDeliveries] = useState(false);
+  const [showMap, setShowMap] = useState(false);
+  const [partnerLocation, setPartnerLocation] = useState(null);
+  const [isMapMaximized, setIsMapMaximized] = useState(false);
   
   const { showToast } = useUIStore();
   const navigate = useNavigate();
   const { user, token, startImpersonating } = useAuthStore();
   const { socket } = useSocketStore();
+
+  useEffect(() => {
+    if (socket && selectedPartner) {
+      const handleLocation = (data) => {
+        if (data.partnerId === selectedPartner._id) {
+          setPartnerLocation({ lat: data.lat, lng: data.lng });
+        }
+      };
+      socket.on('partner-location-update', handleLocation);
+      return () => socket.off('partner-location-update', handleLocation);
+    }
+  }, [socket, selectedPartner]);
 
   const fetchData = async () => {
     try {
@@ -83,6 +143,9 @@ const Partners = () => {
 
   const handlePartnerClick = (partner) => {
     setSelectedPartner(partner);
+    setShowMap(false);
+    setIsMapMaximized(false);
+    setPartnerLocation(partner.liveLocation || null);
     setLoadingDeliveries(true);
     const filteredOrders = allOrders.filter(order => order.deliveryPartner?._id === partner._id);
     setPartnerDeliveries(filteredOrders);
@@ -129,6 +192,7 @@ const Partners = () => {
 
   return (
     <div className="space-y-6 relative">
+      <GlobalDeliverySettingsWidget hideCustomerFees={true} />
       <div className="flex flex-col md:flex-row justify-between md:items-center bg-white dark:bg-dark-800 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-dark-700 gap-4">
         <div>
           <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">Delivery Partners</h2>
@@ -226,7 +290,17 @@ const Partners = () => {
                           {partner.name.charAt(0)}
                         </div>
                         <div className="min-w-0 flex-1">
-                          <h3 className="font-bold text-gray-800 dark:text-gray-100 truncate">{partner.name}</h3>
+                          <h3 className="font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2 truncate">
+                            <span className="truncate">{partner.name}</span>
+                            <a 
+                              href={`tel:${partner.phone}`} 
+                              onClick={(e) => e.stopPropagation()} 
+                              className="text-green-500 hover:text-green-600 bg-green-50 dark:bg-green-900/20 p-1.5 rounded-full transition-colors shrink-0"
+                              title="Call Partner"
+                            >
+                              <Phone size={14} />
+                            </a>
+                          </h3>
                           {partner.partnerId && <p className="text-xs text-gray-400 font-mono mt-0.5">{partner.partnerId}</p>}
                           <p className="text-sm text-gray-500 dark:text-gray-400 truncate">{partner.phone}</p>
                         </div>
@@ -244,22 +318,27 @@ const Partners = () => {
                     <div className="flex flex-wrap justify-between items-center text-sm border-t border-gray-100 dark:border-dark-700 pt-4 mt-2 gap-2">
                       <span className="text-gray-500 dark:text-gray-400">Deliveries: <span className="font-bold text-gray-800 dark:text-gray-100">{completedDeliveries}</span></span>
                       <div className="flex flex-wrap gap-2">
-                        <button 
-                          onClick={async (e) => {
-                            e.stopPropagation();
-                            try {
-                              await api.put(`/users/${partner._id}`, { isSuspended: true });
-                              fetchData();
-                              showToast('Partner suspended', 'success');
-                            } catch (error) {
-                              showToast('Failed to suspend', 'error');
-                            }
-                          }}
-                          className="px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap inline-block bg-gray-100 text-gray-700 dark:text-gray-300 hover:bg-red-50 dark:bg-red-900/20 hover:text-red-700 dark:text-red-400"
-                        >
-                          Suspend
-                        </button>
-                        <button onClick={(e) => handleDeletePartner(e, partner._id)} className="px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap inline-block bg-red-50 dark:bg-red-900/20 text-red-600 hover:bg-red-100">Delete</button>
+                        {partner.role !== 'admin' && (
+                          <>
+                            <button 
+                              onClick={async (e) => {
+                                e.stopPropagation();
+                                if (!window.confirm('Are you sure you want to suspend this partner?')) return;
+                                try {
+                                  await api.put(`/users/${partner._id}`, { isSuspended: true });
+                                  fetchData();
+                                  showToast('Partner suspended', 'success');
+                                } catch (error) {
+                                  showToast('Failed to suspend', 'error');
+                                }
+                              }}
+                              className="px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap inline-block bg-gray-100 text-gray-700 dark:text-gray-300 hover:bg-red-50 dark:bg-red-900/20 hover:text-red-700 dark:text-red-400"
+                            >
+                              Suspend
+                            </button>
+                            <button onClick={(e) => handleDeletePartner(e, partner._id)} className="px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap inline-block bg-red-50 dark:bg-red-900/20 text-red-600 hover:bg-red-100">Delete</button>
+                          </>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -293,7 +372,17 @@ const Partners = () => {
                         {partner.name.charAt(0)}
                       </div>
                       <div className="min-w-0 flex-1">
-                        <h3 className="font-bold text-gray-800 dark:text-gray-100 truncate">{partner.name}</h3>
+                        <h3 className="font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2 truncate">
+                          <span className="truncate">{partner.name}</span>
+                          <a 
+                            href={`tel:${partner.phone}`} 
+                            onClick={(e) => e.stopPropagation()} 
+                            className="text-green-500 hover:text-green-600 bg-green-50 dark:bg-green-900/20 p-1.5 rounded-full transition-colors shrink-0"
+                            title="Call Partner"
+                          >
+                            <Phone size={14} />
+                          </a>
+                        </h3>
                         {partner.partnerId && <p className="text-xs text-gray-400 font-mono mt-0.5">{partner.partnerId}</p>}
                         <p className={`text-sm font-medium truncate ${partner.isSuspended ? 'text-red-500' : 'text-gray-500 dark:text-gray-400'}`}>
                           {partner.isSuspended ? 'Suspended' : 'Offline'}
@@ -304,24 +393,29 @@ const Partners = () => {
                   <div className="flex flex-wrap justify-between items-center text-sm border-t border-red-200 dark:border-red-900/30 pt-4 mt-2 gap-2">
                     <span className="text-gray-500 dark:text-gray-400">Deliveries: <span className="font-bold text-gray-800 dark:text-gray-100">{completedDeliveries}</span></span>
                     <div className="flex flex-wrap gap-2">
-                      {partner.isSuspended && (
-                        <button 
-                          onClick={async (e) => {
-                            e.stopPropagation();
-                            try {
-                              await api.put(`/users/${partner._id}`, { isSuspended: false });
-                              fetchData();
-                              showToast('Partner reactivated', 'success');
-                            } catch (error) {
-                              showToast('Failed to reactivate', 'error');
-                            }
-                          }}
-                          className="px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap inline-block bg-green-100 text-green-700 hover:bg-green-200"
-                        >
-                          Reactivate
-                        </button>
+                      {partner.role !== 'admin' && (
+                        <>
+                          {partner.isSuspended && (
+                            <button 
+                              onClick={async (e) => {
+                                e.stopPropagation();
+                                if (!window.confirm('Are you sure you want to reactivate this partner?')) return;
+                                try {
+                                  await api.put(`/users/${partner._id}`, { isSuspended: false });
+                                  fetchData();
+                                  showToast('Partner reactivated', 'success');
+                                } catch (error) {
+                                  showToast('Failed to reactivate', 'error');
+                                }
+                              }}
+                              className="px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap inline-block bg-green-100 text-green-700 hover:bg-green-200"
+                            >
+                              Reactivate
+                            </button>
+                          )}
+                          <button onClick={(e) => handleDeletePartner(e, partner._id)} className="px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap inline-block bg-red-100 text-red-600 hover:bg-red-200">Delete</button>
+                        </>
                       )}
-                      <button onClick={(e) => handleDeletePartner(e, partner._id)} className="px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap inline-block bg-red-100 text-red-600 hover:bg-red-200">Delete</button>
                     </div>
                   </div>
                 </div>
@@ -345,20 +439,90 @@ const Partners = () => {
             </div>
             
             <div className="p-6">
-              <div className="mb-6">
+              <div className="mb-6 space-y-3">
                 <button 
                   onClick={handleImpersonate}
                   className="w-full bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 font-bold py-3 rounded-xl hover:bg-orange-200 dark:hover:bg-orange-900/50 transition border border-orange-200 dark:border-orange-900/50"
                 >
                   View Dashboard as Partner
                 </button>
+                <button 
+                  onClick={() => setShowMap(!showMap)}
+                  className="w-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 font-bold py-3 rounded-xl hover:bg-blue-200 dark:hover:bg-blue-900/50 transition border border-blue-200 dark:border-blue-900/50 flex items-center justify-center"
+                >
+                  <MapPin size={18} className="mr-2" />
+                  {showMap ? 'Hide Live Location' : 'View Live Location'}
+                </button>
+                
+                {showMap && (
+                  <div className={isMapMaximized 
+                    ? "fixed inset-0 z-[100] bg-black/90 p-4 flex flex-col backdrop-blur-sm" 
+                    : "h-64 w-full bg-gray-50 dark:bg-dark-900 rounded-2xl overflow-hidden border-2 border-gray-200 dark:border-dark-700 relative z-0 shadow-inner mt-4"}
+                  >
+                    {isMapMaximized && (
+                      <div className="flex justify-between items-center mb-4 bg-white/10 p-3 rounded-2xl backdrop-blur-md">
+                        <h3 className="text-white font-bold flex items-center">
+                          <MapPin size={20} className="mr-2 text-primary-400" /> 
+                          {selectedPartner.name}'s Live Location
+                        </h3>
+                        <div className="flex gap-2">
+                          <button 
+                            onClick={() => setIsMapMaximized(false)}
+                            className="p-2 bg-white/20 text-white hover:bg-white/30 rounded-xl transition"
+                          >
+                            <Minimize size={20} />
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                    
+                    <div className={`relative w-full ${isMapMaximized ? 'flex-1 rounded-2xl overflow-hidden border border-white/20' : 'h-full'}`}>
+                      {partnerLocation ? (
+                        <>
+                          <NativeSingleMarkerMap location={partnerLocation} />
+                          
+                          {!isMapMaximized && (
+                            <button 
+                              onClick={() => setIsMapMaximized(true)}
+                              className="absolute bottom-3 right-3 z-[400] p-2 bg-white dark:bg-dark-800 text-gray-700 dark:text-gray-200 rounded-xl shadow-lg border border-gray-200 dark:border-dark-600 hover:bg-gray-50 dark:hover:bg-dark-700 transition"
+                            >
+                              <Maximize size={18} />
+                            </button>
+                          )}
+                          
+                          <div className="absolute top-3 left-3 right-3 z-10 flex justify-center pointer-events-none">
+                            <div className="bg-white/90 dark:bg-dark-800/90 backdrop-blur-md px-4 py-1.5 rounded-full shadow-lg border border-gray-100 dark:border-dark-700 flex items-center">
+                              <div className="w-2 h-2 bg-green-500 rounded-full animate-ping mr-2"></div>
+                              <span className="text-xs font-bold text-gray-900 dark:text-white">Partner Location Live</span>
+                            </div>
+                          </div>
+                        </>
+                      ) : (
+                        <div className="w-full h-full flex flex-col items-center justify-center text-gray-400 p-6 text-center bg-gray-50 dark:bg-dark-900">
+                          <MapPin size={32} className="mb-2 opacity-50" />
+                          <p className="text-sm font-bold">Location Not Available</p>
+                          <p className="text-xs mt-1">Partner is offline or hasn't shared their location.</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
               <div className="flex items-center space-x-4 mb-6">
                 <div className="h-16 w-16 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center text-3xl font-bold">
                   {selectedPartner.name.charAt(0)}
                 </div>
                 <div>
-                  <h3 className="text-2xl font-bold text-gray-800 dark:text-gray-100">{selectedPartner.name}</h3>
+                  <h3 className="text-2xl font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">
+                    {selectedPartner.name}
+                    <a 
+                      href={`tel:${selectedPartner.phone}`} 
+                      className="text-orange-500 hover:text-orange-600 bg-orange-50 dark:bg-orange-900/20 p-1.5 rounded-full transition-colors"
+                      title="Call Partner"
+                    >
+                      <Phone size={18} />
+                    </a>
+                  </h3>
                   <p className="text-sm font-bold text-primary-600 mb-1">ID: {selectedPartner.partnerId || 'Pending'}</p>
                   <p className="text-gray-500 dark:text-gray-400 text-sm mb-1">{selectedPartner.phone}</p>
                   <p className="text-gray-500 dark:text-gray-400 text-sm mb-1">{selectedPartner.email || 'No email provided'}</p>
@@ -433,9 +597,37 @@ const Partners = () => {
                         showToast('Failed to update details', 'error');
                       }
                     }}
-                    className="w-full bg-primary-600 text-white font-bold py-2 rounded-lg text-sm hover:bg-primary-700 mt-2"
+                    className="w-full bg-primary-600 text-white font-bold py-2 rounded-lg text-sm hover:bg-primary-700 mb-4"
                   >
-                    Save Changes
+                    Save Profile Changes
+                  </button>
+                  
+                  <h4 className="font-bold text-sm text-gray-700 dark:text-gray-300 mt-4 mb-2 uppercase tracking-wide border-t border-gray-200 dark:border-dark-700 pt-4">Delivery Configurations</h4>
+                  <div>
+                    <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Delivery Earning Override (₹)</label>
+                    <input 
+                      type="number" 
+                      placeholder="Global Default"
+                      className="w-full px-3 py-2 border dark:border-dark-600 bg-white dark:bg-dark-900 text-gray-900 dark:text-white rounded-lg text-sm"
+                      value={selectedPartner.customDeliveryEarning !== null && selectedPartner.customDeliveryEarning !== undefined ? selectedPartner.customDeliveryEarning : ''}
+                      onChange={(e) => setSelectedPartner({...selectedPartner, customDeliveryEarning: e.target.value === '' ? null : Number(e.target.value)})}
+                    />
+                  </div>
+                  <button 
+                    onClick={async () => {
+                      try {
+                        const { data } = await api.put(`/users/${selectedPartner._id}`, { 
+                          customDeliveryEarning: selectedPartner.customDeliveryEarning
+                        });
+                        setPartners(partners.map(p => p._id === data._id ? {...p, ...data} : p));
+                        showToast('Custom delivery earning updated', 'success');
+                      } catch (error) {
+                        showToast('Failed to update earning', 'error');
+                      }
+                    }}
+                    className="w-full bg-blue-600 text-white font-bold py-2 rounded-lg text-sm hover:bg-blue-700 mt-3"
+                  >
+                    Save Delivery Earning
                   </button>
                 </div>
               </div>

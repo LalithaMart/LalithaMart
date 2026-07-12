@@ -9,9 +9,9 @@ import User from '../models/User.js';
 const getNotifications = async (req, res) => {
   let query;
   if (req.user.role === 'admin') {
-    query = { $or: [{ targetRole: 'admin' }, { userId: req.user._id }] };
+    query = { $or: [{ targetRole: 'admin' }, { userId: req.user._id }], isCleared: { $ne: true } };
   } else {
-    query = { userId: req.user._id };
+    query = { userId: req.user._id, isCleared: { $ne: true } };
   }
   
   const notifications = await Notification.find(query).sort({ createdAt: -1 });
@@ -70,7 +70,8 @@ const deleteNotification = async (req, res) => {
       res.status(401);
       throw new Error('Not authorized');
     }
-    await notification.deleteOne();
+    notification.isCleared = true;
+    await notification.save();
     res.json({ message: 'Notification removed' });
   } else {
     res.status(404);
@@ -90,7 +91,7 @@ const deleteReadNotifications = async (req, res) => {
   } else {
     query = { userId: req.user._id, isRead: true };
   }
-  await Notification.deleteMany(query);
+  await Notification.updateMany(query, { isCleared: true });
   res.json({ message: 'Read notifications removed' });
 };
 
@@ -106,7 +107,7 @@ const deleteAllNotifications = async (req, res) => {
   } else {
     query = { userId: req.user._id };
   }
-  await Notification.deleteMany(query);
+  await Notification.updateMany(query, { isCleared: true });
   res.json({ message: 'All notifications removed' });
 };
 

@@ -36,6 +36,9 @@ const getUserProfile = async (req, res) => {
       savedAddresses: user.savedAddresses,
       isAvailable: user.isAvailable,
       stats: user.stats,
+      customDeliveryFee: user.customDeliveryFee,
+      customFreeDeliveryCartValue: user.customFreeDeliveryCartValue,
+      customDeliveryEarning: user.customDeliveryEarning,
     });
   } else {
     res.status(404);
@@ -116,6 +119,9 @@ const updateUserProfile = async (req, res) => {
       role: updatedUser.role,
       savedAddresses: updatedUser.savedAddresses,
       isAvailable: updatedUser.isAvailable,
+      customDeliveryFee: updatedUser.customDeliveryFee,
+      customFreeDeliveryCartValue: updatedUser.customFreeDeliveryCartValue,
+      customDeliveryEarning: updatedUser.customDeliveryEarning,
     });
   } else {
     res.status(404);
@@ -183,6 +189,11 @@ const updateUser = async (req, res) => {
     if (req.body.isBlocked !== undefined) user.isBlocked = req.body.isBlocked;
     if (req.body.isSuspended !== undefined) user.isSuspended = req.body.isSuspended;
     
+    // Custom Delivery settings
+    if (req.body.customDeliveryFee !== undefined) user.customDeliveryFee = req.body.customDeliveryFee;
+    if (req.body.customFreeDeliveryCartValue !== undefined) user.customFreeDeliveryCartValue = req.body.customFreeDeliveryCartValue;
+    if (req.body.customDeliveryEarning !== undefined) user.customDeliveryEarning = req.body.customDeliveryEarning;
+    
     const updatedUser = await user.save();
     
     const { getIO } = await import('../config/socket.js');
@@ -198,7 +209,10 @@ const updateUser = async (req, res) => {
       isBlocked: updatedUser.isBlocked,
       isSuspended: updatedUser.isSuspended,
       isApproved: updatedUser.isApproved,
-      isAvailable: updatedUser.isAvailable
+      isAvailable: updatedUser.isAvailable,
+      customDeliveryFee: updatedUser.customDeliveryFee,
+      customFreeDeliveryCartValue: updatedUser.customFreeDeliveryCartValue,
+      customDeliveryEarning: updatedUser.customDeliveryEarning
     });
 
     res.json({
@@ -210,6 +224,9 @@ const updateUser = async (req, res) => {
       role: updatedUser.role,
       isBlocked: updatedUser.isBlocked,
       isSuspended: updatedUser.isSuspended,
+      customDeliveryFee: updatedUser.customDeliveryFee,
+      customFreeDeliveryCartValue: updatedUser.customFreeDeliveryCartValue,
+      customDeliveryEarning: updatedUser.customDeliveryEarning
     });
   } else {
     res.status(404);
@@ -275,12 +292,11 @@ const updateLiveLocation = async (req, res) => {
     await user.save();
     
     // Broadcast to tracking room
-    try {
-      import('../socket.js').then(({ getIO }) => {
+    if (req.user.role === 'delivery') {
+      import('../config/socket.js').then(({ getIO }) => {
         getIO().emit('partner-location-update', { partnerId: user._id, lat, lng });
-      });
-    } catch (e) {}
-
+      }).catch(err => console.error('Socket emit error:', err));
+    }
     res.json(user.liveLocation);
   } else {
     res.status(404);

@@ -7,6 +7,7 @@ import { useUIStore } from '../../store/uiStore';
 import { useSocketStore } from '../../store/socketStore';
 
 import { useLocation, useNavigate } from 'react-router-dom';
+import GlobalDeliverySettingsWidget from '../../components/admin/GlobalDeliverySettingsWidget';
 
 const AdminDashboard = () => {
   const location = useLocation();
@@ -373,7 +374,7 @@ const AdminDashboard = () => {
       const dString = new Date(o.createdAt).toLocaleDateString();
       if (groupedDataMap[dString]) {
         groupedDataMap[dString].orders += 1;
-        groupedDataMap[dString].revenue += o.totalAmount;
+        groupedDataMap[dString].revenue += (o.totalAmount - (o.deliveryFeeApplied || 0));
       }
     });
 
@@ -382,12 +383,13 @@ const AdminDashboard = () => {
 
   // Calculate dynamic stats
   const dynamicTotalOrders = validOrders.length;
-  const dynamicRevenue = validOrders.reduce((acc, curr) => acc + curr.totalAmount, 0);
+  const dynamicRevenue = validOrders.reduce((acc, curr) => acc + (curr.totalAmount - (curr.deliveryFeeApplied || 0)), 0);
 
   if (loading) return <div className="flex justify-center p-8">Loading...</div>;
 
   return (
     <div className="space-y-6">
+      <GlobalDeliverySettingsWidget />
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
         <div 
           onClick={() => navigate('/admin/orders')}
@@ -411,7 +413,7 @@ const AdminDashboard = () => {
             </div>
             <div>
               <p className="text-gray-500 dark:text-gray-400 text-xs font-bold uppercase tracking-wider mb-1">Total Sales</p>
-              <h3 className="text-2xl font-black text-gray-800 dark:text-white">₹{filteredOrders.filter(o => o.status === 'Completed').reduce((sum, o) => sum + o.totalAmount, 0)}</h3>
+              <h3 className="text-2xl font-black text-gray-800 dark:text-white">₹{dynamicRevenue}</h3>
             </div>
           </div>
           <div 
@@ -454,6 +456,18 @@ const AdminDashboard = () => {
           <div className="bg-white dark:bg-dark-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-dark-700">
             <h4 className="font-bold text-gray-800 dark:text-gray-200 mb-4">Click-Through Rate (CTR)</h4>
             <p className="text-3xl font-black text-green-500">{stats.notificationAnalytics.clickRate.toFixed(1)}%</p>
+          </div>
+        </div>
+
+        {/* Delivery Analytics Section */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+          <div className="bg-white dark:bg-dark-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-dark-700">
+            <h4 className="font-bold text-gray-800 dark:text-gray-200 mb-4">Total Delivery Fees Collected</h4>
+            <p className="text-3xl font-black text-green-600">₹{filteredOrders.filter(o => o.status === 'Completed').reduce((sum, o) => sum + (o.deliveryFeeApplied || 0), 0).toFixed(2)}</p>
+          </div>
+          <div className="bg-white dark:bg-dark-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-dark-700">
+            <h4 className="font-bold text-gray-800 dark:text-gray-200 mb-4">Total Partner Earnings Paid</h4>
+            <p className="text-3xl font-black text-red-500">₹{filteredOrders.filter(o => o.status === 'Completed').reduce((sum, o) => sum + (o.partnerEarningApplied || 0), 0).toFixed(2)}</p>
           </div>
         </div>
 

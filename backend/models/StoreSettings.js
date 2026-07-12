@@ -34,6 +34,9 @@ const storeSettingsSchema = mongoose.Schema(
       twitter: { type: String, default: '' },
     },
     logoUrl: { type: String, default: '' },
+    defaultDeliveryFee: { type: Number, default: 40 },
+    defaultFreeDeliveryCartValue: { type: Number, default: 500 },
+    defaultDeliveryPartnerEarning: { type: Number, default: 25 },
   },
   {
     timestamps: true,

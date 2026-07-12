@@ -19,12 +19,8 @@ const addOrderItems = async (req, res) => {
     throw new Error('Your account is blocked. You cannot place orders.');
   }
 
-  const { orderItems, deliveryAddress, paymentMethod, totalAmount } = req.body;
-
-  if (totalAmount === undefined || isNaN(totalAmount) || totalAmount < 0) {
-    res.status(400);
-    throw new Error('Invalid total amount');
-  }
+  const { orderItems, deliveryAddress, paymentMethod } = req.body;
+  // Ignore frontend totalAmount entirely for security reasons
 
   if (deliveryAddress && deliveryAddress.phone) {
     if (!/^\d{10}$/.test(deliveryAddress.phone)) {
@@ -49,13 +45,54 @@ const addOrderItems = async (req, res) => {
     
     const orderId = `ORD-${dateStr}-${String(counter.seq).padStart(6, '0')}`;
 
+    // Recalculate Subtotal
+    let subtotal = 0;
+    for (const item of orderItems) {
+      const dbProduct = await Product.findById(item.product);
+      if (!dbProduct) {
+        res.status(400);
+        throw new Error(`Product not found: ${item.name}`);
+      }
+      const priceToUse = dbProduct.discountPrice > 0 ? dbProduct.discountPrice : dbProduct.price;
+      subtotal += priceToUse * item.quantity;
+      // Overwrite frontend price with db price for security
+      item.price = priceToUse;
+    }
+
+    // Delivery Fee Logic
+    const StoreSettings = (await import('../models/StoreSettings.js')).default;
+    let settings = await StoreSettings.findOne();
+    if (!settings) {
+      settings = await StoreSettings.create({});
+    }
+
+    const appliedDeliveryFee = req.user.customDeliveryFee !== null && req.user.customDeliveryFee !== undefined 
+      ? req.user.customDeliveryFee 
+      : settings.defaultDeliveryFee;
+      
+    const appliedFreeDeliveryCartValue = req.user.customFreeDeliveryCartValue !== null && req.user.customFreeDeliveryCartValue !== undefined 
+      ? req.user.customFreeDeliveryCartValue 
+      : settings.defaultFreeDeliveryCartValue;
+
+    const deliveryFeeSource = (req.user.customDeliveryFee !== null && req.user.customDeliveryFee !== undefined) || (req.user.customFreeDeliveryCartValue !== null && req.user.customFreeDeliveryCartValue !== undefined) 
+      ? 'Individual' 
+      : 'Global';
+
+    const freeDeliveryApplied = subtotal >= appliedFreeDeliveryCartValue;
+    const deliveryFeeApplied = freeDeliveryApplied ? 0 : appliedDeliveryFee;
+    const finalTotalAmount = subtotal + deliveryFeeApplied;
+
     const order = new Order({
       orderId,
       orderItems,
       customer: req.user._id,
       deliveryAddress,
       paymentMethod,
-      totalAmount: Math.max(0, totalAmount),
+      totalAmount: finalTotalAmount,
+      deliveryFeeApplied,
+      deliveryFeeSource,
+      freeDeliveryApplied,
+      // partnerEarning will be set when partner is assigned
     });
 
     const createdOrder = await order.save();
@@ -335,8 +372,23 @@ const assignDeliveryPartner = async (req, res) => {
       throw new Error('This partner previously cancelled this order and cannot be reassigned to it.');
     }
 
+    // Determine partner earnings
+    const StoreSettings = (await import('../models/StoreSettings.js')).default;
+    let settings = await StoreSettings.findOne();
+    if (!settings) settings = await StoreSettings.create({});
+
+    const appliedPartnerEarning = partner.customDeliveryEarning !== null && partner.customDeliveryEarning !== undefined
+      ? partner.customDeliveryEarning
+      : settings.defaultDeliveryPartnerEarning;
+      
+    const partnerEarningSource = partner.customDeliveryEarning !== null && partner.customDeliveryEarning !== undefined
+      ? 'Individual'
+      : 'Global';
+
     order.deliveryPartner = partnerId;
     order.status = 'Assigned';
+    order.partnerEarningApplied = appliedPartnerEarning;
+    order.partnerEarningSource = partnerEarningSource;
     const updatedOrder = await order.save();
     
     // Cleanup any admin notifications related to this order being cancelled
@@ -528,10 +580,31 @@ const verifyDeliveryOTP = async (req, res) => {
       
       // Update delivery partner stats
       if (order.deliveryPartner) {
-        const incFields = { 'stats.successfulDeliveries': 1 };
+        const earning = order.partnerEarningApplied || 0;
+        const incFields = { 
+          'stats.successfulDeliveries': 1,
+          'stats.totalEarnings': earning,
+          'stats.dailyEarnings': earning,
+          'stats.weeklyEarnings': earning,
+          'stats.monthlyEarnings': earning
+        };
         if (paymentMethod === 'Cash' || paymentMethod === 'COD') {
           incFields['stats.cashCollections'] = updatedOrder.totalAmount;
           // Note: Removed pendingCashToSubmit increment here to compute daily cash on-the-fly in settlements
+          
+          try {
+            const partner = await User.findById(order.deliveryPartner).select('name');
+            const partnerName = partner ? partner.name : 'Delivery Partner';
+            const notif = await Notification.create({
+              message: `An amount of ₹${updatedOrder.totalAmount} needs to be collected from ${partnerName} after COD delivery for order ${updatedOrder.orderId || updatedOrder._id}.`,
+              type: 'Settlement',
+              targetRole: 'admin',
+              link: `/admin`
+            });
+            getIO().to('admin-room').emit('new-notification', notif);
+          } catch (err) {
+            console.error('Error sending settlement notification to admin', err);
+          }
         } else if (paymentMethod === 'UPI') {
           incFields['stats.upiCollections'] = updatedOrder.totalAmount;
         }

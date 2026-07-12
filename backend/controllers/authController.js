@@ -87,7 +87,10 @@ const registerUser = async (req, res) => {
       role: user.role,
       customerId: user.customerId,
       partnerId: user.partnerId,
-      token,
+      customDeliveryFee: user.customDeliveryFee,
+      customFreeDeliveryCartValue: user.customFreeDeliveryCartValue,
+      customDeliveryEarning: user.customDeliveryEarning,
+      token: generateToken(res, user._id),
     });
   } else {
     res.status(400);
@@ -138,6 +141,9 @@ const loginUser = async (req, res) => {
       role: user.role,
       customerId: user.customerId,
       partnerId: user.partnerId,
+      customDeliveryFee: user.customDeliveryFee,
+      customFreeDeliveryCartValue: user.customFreeDeliveryCartValue,
+      customDeliveryEarning: user.customDeliveryEarning,
       token,
     });
   } else {
@@ -307,6 +313,9 @@ const impersonateUser = async (req, res) => {
       isAvailable: userToImpersonate.isAvailable,
       customerId: userToImpersonate.customerId,
       partnerId: userToImpersonate.partnerId,
+      customDeliveryFee: userToImpersonate.customDeliveryFee,
+      customFreeDeliveryCartValue: userToImpersonate.customFreeDeliveryCartValue,
+      customDeliveryEarning: userToImpersonate.customDeliveryEarning,
       token,
       isImpersonating: true
     });

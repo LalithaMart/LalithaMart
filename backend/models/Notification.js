@@ -26,6 +26,10 @@ const notificationSchema = mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    isCleared: {
+      type: Boolean,
+      default: false,
+    },
     link: {
       type: String,
     },

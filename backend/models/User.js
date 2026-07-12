@@ -62,6 +62,11 @@ const userSchema = mongoose.Schema(
       enum: ['admin', 'customer', 'delivery'],
       default: 'customer',
     },
+    // Custom Delivery Settings (Customer overrides)
+    customDeliveryFee: { type: Number, default: null },
+    customFreeDeliveryCartValue: { type: Number, default: null },
+    // Custom Delivery Earning (Delivery Partner override)
+    customDeliveryEarning: { type: Number, default: null },
     savedAddresses: [addressSchema],
     // For delivery partners
     isAvailable: {
@@ -119,7 +124,6 @@ const userSchema = mongoose.Schema(
 );
 
 userSchema.index({ role: 1 });
-userSchema.index({ phone: 1 });
 userSchema.index({ isApproved: 1 });
 
 // Match user entered password to hashed password in database

@@ -262,12 +262,12 @@ const StoreSettings = () => {
             </h3>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Opening Time</label>
-                <input type="text" name="openingHours" value={settings.openingHours || ''} onChange={handleChange} placeholder="e.g. 09:00 AM" className="w-full px-4 py-2 border border-gray-200 dark:border-dark-700 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500" />
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Store opens at</label>
+                <input type="time" name="openingHours" value={settings.openingHours || ''} onChange={handleChange} className="w-full px-4 py-2 border border-gray-200 dark:border-dark-700 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Closing Time</label>
-                <input type="text" name="closingHours" value={settings.closingHours || ''} onChange={handleChange} placeholder="e.g. 10:00 PM" className="w-full px-4 py-2 border border-gray-200 dark:border-dark-700 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500" />
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Store closes at</label>
+                <input type="time" name="closingHours" value={settings.closingHours || ''} onChange={handleChange} className="w-full px-4 py-2 border border-gray-200 dark:border-dark-700 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500" />
               </div>
             </div>
           </div>
@@ -288,6 +288,27 @@ const StoreSettings = () => {
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Facebook URL</label>
                 <input type="text" name="facebook" value={settings.socialMedia?.facebook || ''} onChange={(e) => handleChange(e, 'socialMedia')} className="w-full px-4 py-2 border border-gray-200 dark:border-dark-700 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500" />
+              </div>
+            </div>
+          </div>
+
+          {/* Global Delivery Settings */}
+          <div className="bg-white dark:bg-dark-800 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-dark-700 space-y-4">
+            <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 flex items-center mb-4 border-b pb-2">
+              <Store size={20} className="mr-2 text-primary-600" /> Delivery Settings
+            </h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Default Delivery Fee (₹)</label>
+                <input type="number" name="defaultDeliveryFee" value={settings.defaultDeliveryFee || 0} onChange={handleChange} className="w-full px-4 py-2 border border-gray-200 dark:border-dark-700 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Free Delivery Cart Value (₹)</label>
+                <input type="number" name="defaultFreeDeliveryCartValue" value={settings.defaultFreeDeliveryCartValue || 0} onChange={handleChange} className="w-full px-4 py-2 border border-gray-200 dark:border-dark-700 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Default Partner Earning/Delivery (₹)</label>
+                <input type="number" name="defaultDeliveryPartnerEarning" value={settings.defaultDeliveryPartnerEarning || 0} onChange={handleChange} className="w-full px-4 py-2 border border-gray-200 dark:border-dark-700 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500" />
               </div>
             </div>
           </div>
