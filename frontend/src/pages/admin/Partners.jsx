@@ -17,10 +17,19 @@ const deliveryIcon = L.divIcon({
   iconAnchor: [18, 18]
 });
 
-function NativeSingleMarkerMap({ location }) {
+const customerIcon = L.divIcon({
+  className: 'custom-icon',
+  html: `<div style="background-color: #ef4444; width: 24px; height: 24px; border-radius: 50%; border: 3px solid white; box-shadow: 0 0 8px rgba(239, 68, 68, 0.6);"></div>`,
+  iconSize: [24, 24],
+  iconAnchor: [12, 12]
+});
+
+function NativeSingleMarkerMap({ location, destinationLocation }) {
   const mapRef = useRef(null);
   const mapInstance = useRef(null);
   const markerInstance = useRef(null);
+  const destMarkerInstance = useRef(null);
+  const polylineInstance = useRef(null);
 
   useEffect(() => {
     if (!mapRef.current || !location) return;
@@ -36,9 +45,58 @@ function NativeSingleMarkerMap({ location }) {
         .bindPopup('<div style="font-weight: bold; font-family: sans-serif; color: #3b82f6;">Delivery Partner</div>');
     } else {
       markerInstance.current.setLatLng([location.lat, location.lng]);
-      mapInstance.current.setView([location.lat, location.lng]);
     }
-  }, [location]);
+
+    if (destinationLocation) {
+      if (destMarkerInstance.current) {
+        destMarkerInstance.current.setLatLng([destinationLocation.lat, destinationLocation.lng]);
+      } else {
+        destMarkerInstance.current = L.marker([destinationLocation.lat, destinationLocation.lng], { icon: customerIcon })
+          .addTo(mapInstance.current)
+          .bindPopup('<div style="font-weight: bold; font-family: sans-serif;">Delivery Address</div>');
+      }
+
+      // Fetch OSRM Route
+      const fetchRoute = async () => {
+        try {
+          const res = await fetch(`https://router.project-osrm.org/route/v1/driving/${location.lng},${location.lat};${destinationLocation.lng},${destinationLocation.lat}?overview=full&geometries=geojson`);
+          const data = await res.json();
+          if (data.routes && data.routes.length > 0) {
+            const coordinates = data.routes[0].geometry.coordinates.map(coord => [coord[1], coord[0]]);
+            if (polylineInstance.current) {
+              polylineInstance.current.setLatLngs(coordinates);
+            } else {
+              polylineInstance.current = L.polyline(coordinates, { color: '#3b82f6', weight: 5, opacity: 0.8 }).addTo(mapInstance.current);
+              mapInstance.current.fitBounds(polylineInstance.current.getBounds(), { padding: [50, 50] });
+            }
+          }
+        } catch (error) {
+          const linePoints = [
+            [location.lat, location.lng],
+            [destinationLocation.lat, destinationLocation.lng]
+          ];
+          if (polylineInstance.current) {
+            polylineInstance.current.setLatLngs(linePoints);
+          } else {
+            polylineInstance.current = L.polyline(linePoints, { color: '#3b82f6', dashArray: '5, 10', weight: 4 }).addTo(mapInstance.current);
+            mapInstance.current.fitBounds(polylineInstance.current.getBounds(), { padding: [50, 50] });
+          }
+        }
+      };
+      fetchRoute();
+    } else {
+      // No destination, just center on partner
+      mapInstance.current.setView([location.lat, location.lng]);
+      if (polylineInstance.current) {
+        polylineInstance.current.remove();
+        polylineInstance.current = null;
+      }
+      if (destMarkerInstance.current) {
+        destMarkerInstance.current.remove();
+        destMarkerInstance.current = null;
+      }
+    }
+  }, [location, destinationLocation]);
 
   useEffect(() => {
     return () => {
@@ -189,6 +247,9 @@ const Partners = () => {
   const pendingPartners = sortedPartners.filter(p => !p.isApproved);
   const activePartners = sortedPartners.filter(p => p.isApproved && !p.isSuspended && p.isAvailable && (filterStatus === 'all' || filterStatus === 'active'));
   const inactivePartners = sortedPartners.filter(p => p.isApproved && (p.isSuspended || !p.isAvailable) && (filterStatus === 'all' || filterStatus === 'inactive'));
+
+  const activeOrder = partnerDeliveries.find(o => o.status === 'Out for Delivery');
+  const activeDestination = activeOrder ? activeOrder.deliveryAddress?.location : null;
 
   return (
     <div className="space-y-6 relative">
@@ -479,7 +540,7 @@ const Partners = () => {
                     <div className={`relative w-full ${isMapMaximized ? 'flex-1 rounded-2xl overflow-hidden border border-white/20' : 'h-full'}`}>
                       {partnerLocation ? (
                         <>
-                          <NativeSingleMarkerMap location={partnerLocation} />
+                          <NativeSingleMarkerMap location={partnerLocation} destinationLocation={isMapMaximized ? activeDestination : null} />
                           
                           {!isMapMaximized && (
                             <button 

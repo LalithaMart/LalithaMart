@@ -13,6 +13,8 @@ const Register = ({ targetRole = 'customer' }) => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
+  const [step, setStep] = useState(1);
+  const [otp, setOtp] = useState('');
   const navigate = useNavigate();
   const { setCredentials } = useAuthStore();
 
@@ -30,22 +32,27 @@ const Register = ({ targetRole = 'customer' }) => {
     setSuccess('');
     setLoading(true);
     try {
-      const payload = { name, phone, password, role: targetRole };
-      if (email.trim() !== '') {
-        payload.email = email.trim();
-      }
-      const response = await api.post('/auth/register', payload);
-      
-      if (targetRole === 'delivery') {
-        setSuccess('Registration successful! Please wait for admin approval before logging in.');
+      if (step === 1) {
+        const payload = { name, phone, email: email.trim(), password, role: targetRole };
+        const response = await api.post('/auth/send-signup-otp', payload);
+        setSuccess(response.data.message || 'OTP sent to your email.');
+        setStep(2);
         setLoading(false);
-        // Do not set credentials and do not redirect immediately so they can read the message
       } else {
-        setCredentials(response.data, response.data.token);
-        navigate('/');
+        // Step 2: Verify OTP
+        const response = await api.post('/auth/verify-signup-otp', { email: email.trim(), otp });
+        
+        if (targetRole === 'delivery') {
+          setSuccess('Registration successful! Please wait for admin approval before logging in.');
+          setStep(3); // success state
+          setLoading(false);
+        } else {
+          setCredentials(response.data, response.data.token);
+          navigate('/');
+        }
       }
     } catch (err) {
-      setError(err.response?.data?.message || 'Registration failed');
+      setError(err.response?.data?.message || 'Request failed');
       setLoading(false);
     }
   };
@@ -57,10 +64,12 @@ const Register = ({ targetRole = 'customer' }) => {
 
   return (
     <div className="max-w-md mx-auto mt-16 bg-white dark:bg-dark-800 p-8 rounded-xl shadow-sm border border-gray-100 dark:border-dark-700 transition-colors">
-      <h2 className="text-2xl font-bold text-center text-gray-800 dark:text-white mb-8">{getTitle()}</h2>
+      <h2 className="text-2xl font-bold text-center text-gray-800 dark:text-white mb-8">
+        {step === 2 ? 'Verify Email' : getTitle()}
+      </h2>
       
       {error && <div className="bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 p-3 rounded-lg mb-6 text-sm">{error}</div>}
-      {success && (
+      {success && step === 3 && (
         <div className="bg-green-50 text-green-700 p-4 rounded-lg mb-6 text-sm flex flex-col gap-3 text-center">
           <p>{success}</p>
           <Link to="/login" className="inline-block bg-green-600 text-white py-2 px-4 rounded hover:bg-green-700 transition">
@@ -69,7 +78,7 @@ const Register = ({ targetRole = 'customer' }) => {
         </div>
       )}
       
-      {!success && (
+      {step === 1 && (
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Full Name</label>
@@ -104,9 +113,10 @@ const Register = ({ targetRole = 'customer' }) => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Gmail Address (Optional)</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Gmail Address</label>
             <input
               type="email"
+              required
               className="w-full px-4 py-2 bg-white dark:bg-dark-900 border border-gray-300 dark:border-dark-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition text-gray-900 dark:text-white"
               placeholder="example@gmail.com"
               value={email}
@@ -141,7 +151,41 @@ const Register = ({ targetRole = 'customer' }) => {
             disabled={loading}
             className="w-full bg-primary-600 text-white py-2.5 rounded-lg font-medium hover:bg-primary-700 transition disabled:opacity-70 mt-2"
           >
-            {loading ? 'Creating Account...' : 'Create Account'}
+            {loading ? 'Sending OTP...' : 'Send OTP'}
+          </button>
+        </form>
+      )}
+
+      {step === 2 && (
+        <form onSubmit={handleSubmit} className="space-y-5">
+          {success && <div className="bg-green-50 text-green-700 p-3 rounded-lg mb-6 text-sm text-center font-medium">{success}</div>}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 text-center">
+              Enter the 6-digit OTP sent to {email}
+            </label>
+            <input
+              type="text"
+              required
+              maxLength="6"
+              className="w-full px-4 py-3 bg-white dark:bg-dark-900 border border-gray-300 dark:border-dark-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition text-gray-900 dark:text-white text-center text-2xl tracking-[0.5em] font-bold"
+              placeholder="------"
+              value={otp}
+              onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
+            />
+          </div>
+          <button
+            type="submit"
+            disabled={loading || otp.length !== 6}
+            className="w-full bg-primary-600 text-white py-2.5 rounded-lg font-medium hover:bg-primary-700 transition disabled:opacity-70 mt-2"
+          >
+            {loading ? 'Verifying...' : 'Verify & Create Account'}
+          </button>
+          <button
+            type="button"
+            onClick={() => { setStep(1); setSuccess(''); setError(''); }}
+            className="w-full bg-gray-100 dark:bg-dark-700 text-gray-700 dark:text-gray-300 py-2.5 rounded-lg font-medium hover:bg-gray-200 dark:hover:bg-dark-600 transition mt-2"
+          >
+            Back
           </button>
         </form>
       )}

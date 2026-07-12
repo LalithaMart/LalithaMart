@@ -1,6 +1,8 @@
 import express from 'express';
 import {
   registerUser,
+  sendSignupOtp,
+  verifySignupOtp,
   loginUser,
   forgotPassword,
   verifyOtp,
@@ -24,6 +26,8 @@ const asyncHandler = fn => (req, res, next) =>
   Promise.resolve(fn(req, res, next)).catch(next);
 
 router.post('/register', authLimiter, asyncHandler(registerUser));
+router.post('/send-signup-otp', authLimiter, asyncHandler(sendSignupOtp));
+router.post('/verify-signup-otp', authLimiter, asyncHandler(verifySignupOtp));
 router.post('/login', authLimiter, asyncHandler(loginUser));
 router.post('/forgot-password', asyncHandler(forgotPassword));
 router.post('/verify-otp', asyncHandler(verifyOtp));

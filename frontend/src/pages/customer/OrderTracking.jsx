@@ -57,16 +57,38 @@ function NativeTrackingMap({ customerLocation, partnerLocation }) {
           .bindPopup('<div style="font-weight: bold; font-family: sans-serif; color: #3b82f6;">Delivery Partner</div>');
       }
 
-      const linePoints = [
-        [partnerLocation.lat, partnerLocation.lng],
-        [customerLocation.lat, customerLocation.lng]
-      ];
-
-      if (polylineInstance.current) {
-        polylineInstance.current.setLatLngs(linePoints);
-      } else {
-        polylineInstance.current = L.polyline(linePoints, { color: '#3b82f6', dashArray: '5, 10', weight: 4 }).addTo(mapInstance.current);
-      }
+      // Fetch OSRM Route
+      const fetchRoute = async () => {
+        try {
+          const res = await fetch(`https://router.project-osrm.org/route/v1/driving/${partnerLocation.lng},${partnerLocation.lat};${customerLocation.lng},${customerLocation.lat}?overview=full&geometries=geojson`);
+          const data = await res.json();
+          if (data.routes && data.routes.length > 0) {
+            const coordinates = data.routes[0].geometry.coordinates.map(coord => [coord[1], coord[0]]);
+            
+            if (polylineInstance.current) {
+              polylineInstance.current.setLatLngs(coordinates);
+            } else {
+              polylineInstance.current = L.polyline(coordinates, { color: '#3b82f6', weight: 5, opacity: 0.8 }).addTo(mapInstance.current);
+              // Fit bounds to show the whole route initially
+              mapInstance.current.fitBounds(polylineInstance.current.getBounds(), { padding: [50, 50] });
+            }
+          }
+        } catch (error) {
+          console.error("Failed to fetch OSRM route:", error);
+          // Fallback to straight line
+          const linePoints = [
+            [partnerLocation.lat, partnerLocation.lng],
+            [customerLocation.lat, customerLocation.lng]
+          ];
+          if (polylineInstance.current) {
+            polylineInstance.current.setLatLngs(linePoints);
+          } else {
+            polylineInstance.current = L.polyline(linePoints, { color: '#3b82f6', dashArray: '5, 10', weight: 4 }).addTo(mapInstance.current);
+          }
+        }
+      };
+      
+      fetchRoute();
     }
   }, [customerLocation, partnerLocation]);
 
@@ -97,6 +119,9 @@ const OrderTracking = () => {
       try {
         const { data } = await api.get(`/orders/${id}`);
         setOrder(data);
+        if (data.deliveryPartner?.liveLocation?.lat) {
+          setPartnerLocation(data.deliveryPartner.liveLocation);
+        }
       } catch (error) {
         console.error(error);
         showToast('Failed to load order', 'error');
