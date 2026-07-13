@@ -203,43 +203,41 @@ const forgotPassword = async (req, res) => {
   // SIMULATION: Print to console
   console.log(`[EMAIL SIMULATION] OTP for ${email} is ${generatedOtp}`);
 
-  // Nodemailer Integration
+  // Nodemailer Integration -> Resend API
   try {
-    const transporter = nodemailer.createTransport({
-      host: 'smtp.gmail.com',
-      port: 465,
-      secure: true,
-      family: 4, // Force IPv4 to prevent ENETUNREACH on serverless IPv6
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS,
+    const resendApiKey = process.env.RESEND_API_KEY || 're_nt7zunmf_G5xzBk81dt9k45noVVga7Yus';
+    const response = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${resendApiKey}`,
+        'Content-Type': 'application/json'
       },
-      tls: {
-        rejectUnauthorized: false
-      }
+      body: JSON.stringify({
+        from: 'onboarding@resend.dev',
+        to: email,
+        subject: 'Your Lalitha Mart Password Reset OTP',
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
+            <h2 style="color: #2e7d32; text-align: center;">Lalitha Mart</h2>
+            <p style="font-size: 16px;">Hello,</p>
+            <p style="font-size: 16px;">You requested a password reset. Please use the following 6-digit OTP to reset your password:</p>
+            <div style="text-align: center; margin: 20px 0;">
+              <span style="font-size: 24px; font-weight: bold; background-color: #f1f8e9; padding: 10px 20px; border-radius: 5px; color: #336600; letter-spacing: 5px;">${generatedOtp}</span>
+            </div>
+            <p style="font-size: 14px; color: #777;">This OTP is valid for 10 minutes. If you did not request a password reset, please ignore this email.</p>
+          </div>
+        `
+      })
     });
 
-    const mailOptions = {
-      from: `"Lalitha Mart" <${process.env.SMTP_USER}>`,
-      to: email,
-      subject: 'Your Lalitha Mart Password Reset OTP',
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
-          <h2 style="color: #2e7d32; text-align: center;">Lalitha Mart</h2>
-          <p style="font-size: 16px;">Hello,</p>
-          <p style="font-size: 16px;">You requested a password reset. Please use the following 6-digit OTP to reset your password:</p>
-          <div style="text-align: center; margin: 20px 0;">
-            <span style="font-size: 24px; font-weight: bold; background-color: #f1f8e9; padding: 10px 20px; border-radius: 5px; color: #336600; letter-spacing: 5px;">${generatedOtp}</span>
-          </div>
-          <p style="font-size: 14px; color: #777;">This OTP is valid for 10 minutes. If you did not request a password reset, please ignore this email.</p>
-        </div>
-      `
-    };
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.message || 'Resend API Error');
+    }
 
-    await transporter.sendMail(mailOptions);
-    console.log('OTP sent via Nodemailer to', email);
+    console.log('OTP sent via Resend to', email);
   } catch (err) {
-    console.error('Failed to send email via Nodemailer:', err);
+    console.error('Failed to send email via Resend:', err);
     res.status(500);
     throw new Error('Failed to send OTP email. Reason: ' + (err.message || 'Unknown error'));
   }
@@ -395,41 +393,39 @@ const sendSignupOtp = async (req, res) => {
     setTimeout(() => memoryOtpStore.delete(`SIGNUP_${email.toLowerCase()}`), 600 * 1000);
   }
 
-  // Send Email
+  // Send Email via Resend API
   try {
-    const transporter = nodemailer.createTransport({
-      host: 'smtp.gmail.com',
-      port: 465,
-      secure: true,
-      family: 4, // Force IPv4 to prevent ENETUNREACH on serverless IPv6
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS,
+    const resendApiKey = process.env.RESEND_API_KEY || 're_nt7zunmf_G5xzBk81dt9k45noVVga7Yus';
+    const response = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${resendApiKey}`,
+        'Content-Type': 'application/json'
       },
-      tls: {
-        rejectUnauthorized: false
-      }
+      body: JSON.stringify({
+        from: 'onboarding@resend.dev',
+        to: email,
+        subject: 'Verify your Lalitha Mart Account Registration',
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
+            <h2 style="color: #2e7d32; text-align: center;">Welcome to Lalitha Mart!</h2>
+            <p style="font-size: 16px;">Hello ${name},</p>
+            <p style="font-size: 16px;">Thank you for registering. Please use the following 6-digit OTP to verify your email and complete your signup:</p>
+            <div style="text-align: center; margin: 20px 0;">
+              <span style="font-size: 24px; font-weight: bold; background-color: #f1f8e9; padding: 10px 20px; border-radius: 5px; color: #336600; letter-spacing: 5px;">${generatedOtp}</span>
+            </div>
+            <p style="font-size: 14px; color: #777;">This OTP is valid for 10 minutes.</p>
+          </div>
+        `
+      })
     });
 
-    const mailOptions = {
-      from: `"Lalitha Mart" <${process.env.SMTP_USER}>`,
-      to: email,
-      subject: 'Verify your Lalitha Mart Account Registration',
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
-          <h2 style="color: #2e7d32; text-align: center;">Welcome to Lalitha Mart!</h2>
-          <p style="font-size: 16px;">Hello ${name},</p>
-          <p style="font-size: 16px;">Thank you for registering. Please use the following 6-digit OTP to verify your email and complete your signup:</p>
-          <div style="text-align: center; margin: 20px 0;">
-            <span style="font-size: 24px; font-weight: bold; background-color: #f1f8e9; padding: 10px 20px; border-radius: 5px; color: #336600; letter-spacing: 5px;">${generatedOtp}</span>
-          </div>
-          <p style="font-size: 14px; color: #777;">This OTP is valid for 10 minutes.</p>
-        </div>
-      `
-    };
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.message || 'Resend API Error');
+    }
 
-    await transporter.sendMail(mailOptions);
-    console.log('Signup OTP email sent for', email);
+    console.log('Signup OTP email sent via Resend for', email);
     res.json({ message: 'OTP sent successfully to your email' });
   } catch (err) {
     console.error('Failed to send signup email:', err);
