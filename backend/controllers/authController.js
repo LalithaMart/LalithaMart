@@ -124,6 +124,18 @@ const loginUser = async (req, res) => {
       res.status(403);
       throw new Error('Your account is pending admin approval');
     }
+    if (user.isBlocked) {
+      res.status(403);
+      throw new Error('Your account is deleted / blocked and you cant use the site. Contact for support.');
+    }
+    if (user.isSuspended) {
+      res.status(403);
+      throw new Error('Your account is deleted / blocked and you cant use the site. Contact for support.');
+    }
+    if (user.accountStatus === 'deleted_by_admin') {
+      res.status(403);
+      throw new Error('Your account is deleted / blocked and you cant use the site. Contact for support.');
+    }
     if (user.accountStatus === 'deleted_by_user') {
       if (user.deletionScheduledFor && user.deletionScheduledFor > new Date()) {
         return res.status(403).json({
@@ -402,11 +414,12 @@ const sendSignupOtp = async (req, res) => {
       `
     };
 
+    res.json({ message: 'OTP sent successfully to your email' });
+    
     transporter.sendMail(mailOptions).catch(err => {
       console.error('Failed to send signup email via Nodemailer:', err);
     });
     console.log('Signup OTP email initiated for', email);
-    res.json({ message: 'OTP sent successfully to your email' });
   } catch (err) {
     console.error('Failed to initiate signup email:', err);
     res.status(500);

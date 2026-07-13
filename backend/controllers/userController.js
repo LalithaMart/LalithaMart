@@ -218,6 +218,12 @@ const updateUser = async (req, res) => {
         link: isNowRestricted ? '/contact' : '/'
       });
       io.to(updatedUser._id.toString()).emit('new-notification', notif);
+      if (isNowRestricted) {
+        io.to(updatedUser._id.toString()).emit('force-logout', {
+          message: 'Your account is deleted / blocked and you cant use the site. Contact for support.',
+          redirectUrl: '/contact'
+        });
+      }
     }
     getIO().to(updatedUser._id.toString()).emit('user-updated', {
       _id: updatedUser._id,
@@ -284,6 +290,10 @@ const deleteUser = async (req, res) => {
     import('../config/socket.js').then(({ getIO }) => {
       getIO().to(user._id.toString()).emit('new-notification', notif);
       getIO().to(user._id.toString()).emit('user-updated', { ...user.toObject(), accountStatus: 'deleted_by_admin' });
+      getIO().to(user._id.toString()).emit('force-logout', {
+        message: 'Your account is deleted / blocked and you cant use the site. Contact for support.',
+        redirectUrl: '/contact'
+      });
     }).catch(err => console.error('Socket emit error:', err));
 
     res.json({ message: 'User scheduled for deletion (Admin)' });

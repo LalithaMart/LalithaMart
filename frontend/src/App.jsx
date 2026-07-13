@@ -92,7 +92,7 @@ function App() {
       const handleForceLogout = (data) => {
         alert(data.message || 'You have been logged out.');
         logout();
-        window.location.href = '/login';
+        window.location.href = data.redirectUrl || '/login';
       };
 
       socket.on('user-updated', handleUserUpdated);
