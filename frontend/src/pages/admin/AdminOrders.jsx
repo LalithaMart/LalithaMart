@@ -706,10 +706,10 @@ const AdminOrders = () => {
                 <div className="mt-5 pt-5 border-t border-gray-100 dark:border-dark-700">
                   <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wider">Assign / Reassign Partner</label>
                   <div className="space-y-2 max-h-48 overflow-y-auto custom-scrollbar pr-2">
-                  {partners.filter(p => p.isAvailable).length === 0 ? (
+                  {partners.filter(p => p.isAvailable && !p.isBlocked && !p.isSuspended && p.accountStatus !== 'deleted_by_admin' && p.accountStatus !== 'deleted_by_user').length === 0 ? (
                     <p className="text-sm font-medium text-red-500 bg-red-50 dark:bg-red-900/20 p-3 rounded-xl border border-red-100 dark:border-red-900/50">No partners are currently available.</p>
                   ) : (
-                    partners.filter(p => p.isAvailable).map(partner => {
+                    partners.filter(p => p.isAvailable && !p.isBlocked && !p.isSuspended && p.accountStatus !== 'deleted_by_admin' && p.accountStatus !== 'deleted_by_user').map(partner => {
                       const isOutForDelivery = partner.isOutForDelivery || orders.some(o => o.status === 'Out for Delivery' && o.deliveryPartner?._id === partner._id);
                       return (
                       <div key={partner._id} className="flex items-center justify-between p-3 rounded-xl border border-gray-100 dark:border-dark-600 bg-gray-50 dark:bg-dark-900 hover:border-primary-300 transition-colors">
