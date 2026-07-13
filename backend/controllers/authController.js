@@ -239,7 +239,8 @@ const forgotPassword = async (req, res) => {
     console.log('OTP sent via Nodemailer to', email);
   } catch (err) {
     console.error('Failed to send email via Nodemailer:', err);
-    return res.json({ message: `Email failed. Use OTP: ${generatedOtp}` });
+    res.status(500);
+    throw new Error('Failed to send OTP email. Verify SMTP settings.');
   }
 
   res.json({ message: `OTP sent to ${email} successfully!` });
@@ -430,8 +431,8 @@ const sendSignupOtp = async (req, res) => {
     res.json({ message: 'OTP sent successfully to your email' });
   } catch (err) {
     console.error('Failed to send signup email:', err);
-    // Fallback for live testing when SMTP is not configured properly
-    res.json({ message: `Email failed. Use OTP: ${generatedOtp}` });
+    res.status(500);
+    throw new Error('Failed to send OTP email. Verify SMTP settings.');
   }
 };
 
