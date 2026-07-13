@@ -398,11 +398,13 @@ const sendSignupOtp = async (req, res) => {
       `
     };
 
-    await transporter.sendMail(mailOptions);
-    console.log('Signup OTP sent via Nodemailer to', email);
+    transporter.sendMail(mailOptions).catch(err => {
+      console.error('Failed to send signup email via Nodemailer:', err);
+    });
+    console.log('Signup OTP email initiated for', email);
     res.json({ message: 'OTP sent successfully to your email' });
   } catch (err) {
-    console.error('Failed to send signup email:', err);
+    console.error('Failed to initiate signup email:', err);
     res.status(500);
     throw new Error('Failed to send OTP email. Please try again.');
   }

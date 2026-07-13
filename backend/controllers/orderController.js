@@ -144,7 +144,7 @@ const addOrderItems = async (req, res) => {
       getIO().to('admin-room').emit('new-order', createdOrder);
       
       const newNotif = await Notification.create({
-        message: `New Order Received: ${orderId} for ₹${totalAmount}`,
+        message: `New Order Received: ${orderId} for ₹${finalTotalAmount}`,
         type: 'Order',
         relatedId: createdOrder._id,
         targetRole: 'admin',
