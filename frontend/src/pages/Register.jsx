@@ -77,7 +77,9 @@ const Register = ({ targetRole = 'customer' }) => {
         }
       }
     } catch (err) {
-      setError(err.response?.data?.message || 'Request failed');
+      console.error("Registration Error:", err);
+      const errorMsg = err.response?.data?.message || err.message || 'Request failed';
+      setError(errorMsg + (err.response?.status ? ` (Status: ${err.response.status})` : ''));
       setLoading(false);
     }
   };
