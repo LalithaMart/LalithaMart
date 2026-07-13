@@ -558,19 +558,25 @@ const Partners = () => {
                             <button 
                               onClick={async (e) => {
                                 e.stopPropagation();
-                                if (!window.confirm('Are you sure you want to unsuspend this partner?')) return;
+                                if (!window.confirm(`Are you sure you want to un${partner.isSuspended ? 'suspend' : 'block'} this partner?`)) return;
                                 try {
-                                  await api.put(`/users/${partner._id}`, { isSuspended: false });
+                                  if (partner.isSuspended) {
+                                    await api.put(`/users/${partner._id}`, { isSuspended: false });
+                                    showToast('Partner unsuspended', 'success');
+                                  } else {
+                                    await api.put(`/users/${partner._id}`, { isBlocked: false });
+                                    showToast('Partner unblocked', 'success');
+                                  }
                                   fetchData();
-                                  showToast('Partner unsuspended', 'success');
                                 } catch (error) {
-                                  showToast('Failed to unsuspend', 'error');
+                                  showToast('Failed to unrestrict', 'error');
                                 }
                               }}
                               className="px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap inline-block bg-green-50 dark:bg-green-900/20 text-green-600 hover:bg-green-100"
                             >
-                              Unsuspend
+                              {partner.isSuspended ? 'Unsuspend' : 'Unblock'}
                             </button>
+                            <button onClick={(e) => handleDeletePartner(e, partner._id)} className="px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap inline-block bg-red-100 text-red-600 hover:bg-red-200">Delete</button>
                         </>
                       )}
                     </div>
