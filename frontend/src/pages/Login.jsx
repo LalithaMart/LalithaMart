@@ -82,6 +82,9 @@ const Login = () => {
   };
 
   const handleReactivate = async () => {
+    if (!window.confirm("Are you sure you want to reactivate your account?")) {
+      return;
+    }
     setLoading(true);
     setError('');
     try {
