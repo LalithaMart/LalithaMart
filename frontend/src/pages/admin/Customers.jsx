@@ -231,7 +231,7 @@ const Customers = () => {
                         >
                           {customer.isBlocked ? 'Blocked' : 'Block'}
                         </button>
-                        {customer.accountStatus === 'deleted_by_admin' ? (
+                        {customer.accountStatus === 'deleted_by_admin' || customer.accountStatus === 'deleted_by_user' ? (
                           <button 
                             onClick={(e) => handleUndoDeleteCustomer(e, customer._id)}
                             className="px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap inline-block bg-blue-50 dark:bg-blue-900/20 text-blue-600 hover:bg-blue-100"
