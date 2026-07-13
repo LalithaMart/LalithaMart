@@ -536,6 +536,20 @@ const reactivateAccount = async (req, res) => {
       user.deletionScheduledFor = undefined;
       await user.save();
       
+      const Notification = (await import('../models/Notification.js')).default;
+      const notif = await Notification.create({
+        title: 'Account Restored',
+        message: 'Your account has been successfully restored and is now active.',
+        type: 'System',
+        userId: user._id,
+        targetRole: 'specific',
+        link: '/'
+      });
+      
+      import('../config/socket.js').then(({ getIO }) => {
+        getIO().to(user._id.toString()).emit('new-notification', notif);
+      }).catch(err => console.error('Socket emit error:', err));
+      
       const token = generateToken(res, user._id);
       res.json({
         _id: user._id,

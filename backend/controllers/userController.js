@@ -202,15 +202,20 @@ const updateUser = async (req, res) => {
     const { getIO } = await import('../config/socket.js');
     const io = getIO();
     
-    if ((req.body.isBlocked && !wasBlocked) || (req.body.isSuspended && !wasSuspended)) {
+    if ((req.body.isBlocked !== undefined && req.body.isBlocked !== wasBlocked) || 
+        (req.body.isSuspended !== undefined && req.body.isSuspended !== wasSuspended)) {
+      
+      const isNowRestricted = updatedUser.isBlocked || updatedUser.isSuspended;
       const Notification = (await import('../models/Notification.js')).default;
       const notif = await Notification.create({
-        title: 'Account Restricted',
-        message: 'Your account is deleted / blocked and you cant use the site. Contact for support.',
+        title: isNowRestricted ? 'Account Restricted' : 'Account Restored',
+        message: isNowRestricted 
+          ? 'Your account is deleted / blocked and you cant use the site. Contact for support.'
+          : 'Your account has been unblocked and is now fully active.',
         type: 'System',
         userId: updatedUser._id,
         targetRole: 'specific',
-        link: '/contact'
+        link: isNowRestricted ? '/contact' : '/'
       });
       io.to(updatedUser._id.toString()).emit('new-notification', notif);
     }
@@ -322,8 +327,24 @@ const undoDeleteUser = async (req, res) => {
     if (user.accountStatus === 'deleted_by_admin') {
       user.accountStatus = 'active';
       user.deletionScheduledFor = undefined;
-      const updatedUser = await user.save();
-      res.json({ message: 'Account deletion reversed successfully.', user: updatedUser });
+      await user.save();
+
+      const Notification = (await import('../models/Notification.js')).default;
+      const notif = await Notification.create({
+        title: 'Account Restored',
+        message: 'Your account has been successfully restored and is now active.',
+        type: 'System',
+        userId: user._id,
+        targetRole: 'specific',
+        link: '/'
+      });
+
+      import('../config/socket.js').then(({ getIO }) => {
+        getIO().to(user._id.toString()).emit('new-notification', notif);
+        getIO().to(user._id.toString()).emit('user-updated', { ...user.toObject(), accountStatus: 'active' });
+      }).catch(err => console.error('Socket emit error:', err));
+
+      res.json({ message: 'User restored successfully' });
     } else {
       res.status(400);
       throw new Error('This account was not deleted by an admin.');
