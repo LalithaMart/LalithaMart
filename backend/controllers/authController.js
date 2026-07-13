@@ -240,7 +240,7 @@ const forgotPassword = async (req, res) => {
   } catch (err) {
     console.error('Failed to send email via Nodemailer:', err);
     res.status(500);
-    throw new Error('Failed to send OTP email. Verify SMTP settings.');
+    throw new Error('Failed to send OTP email. Reason: ' + (err.message || 'Unknown error'));
   }
 
   res.json({ message: `OTP sent to ${email} successfully!` });
@@ -432,7 +432,7 @@ const sendSignupOtp = async (req, res) => {
   } catch (err) {
     console.error('Failed to send signup email:', err);
     res.status(500);
-    throw new Error('Failed to send OTP email. Verify SMTP settings.');
+    throw new Error('Failed to send OTP email. Reason: ' + (err.message || 'Unknown error'));
   }
 };
 
