@@ -197,6 +197,19 @@ const Profile = () => {
     navigate('/login');
   };
 
+  const handleDeleteAccount = async () => {
+    if (window.confirm("Are you sure you want to delete your account? It will be permanently deleted in 30 days. You can reactivate it anytime before then by logging in.")) {
+      try {
+        await api.delete('/users/profile');
+        alert('Your account has been scheduled for deletion.');
+        logout();
+        navigate('/login');
+      } catch (err) {
+        alert(err.response?.data?.message || 'Failed to schedule account deletion');
+      }
+    }
+  };
+
   const handleCancelOrder = async (orderId) => {
     if (window.confirm('Are you sure you want to cancel this order?')) {
       try {
@@ -352,10 +365,17 @@ const Profile = () => {
             </button>
             <button 
               onClick={handleLogout}
-              className="flex-1 md:flex-none flex justify-center items-center text-red-500 bg-red-50 dark:bg-red-900/20 px-6 py-3 rounded-2xl font-bold hover:bg-red-100 dark:hover:bg-red-900/40 transition shadow-sm"
+              className="flex-1 md:flex-none flex justify-center items-center text-orange-500 bg-orange-50 dark:bg-orange-900/20 px-6 py-3 rounded-2xl font-bold hover:bg-orange-100 dark:hover:bg-orange-900/40 transition shadow-sm"
             >
               <LogOut size={18} className="mr-2" />
               Logout
+            </button>
+            <button 
+              onClick={handleDeleteAccount}
+              className="flex-1 md:flex-none flex justify-center items-center text-red-500 bg-red-50 dark:bg-red-900/20 px-6 py-3 rounded-2xl font-bold hover:bg-red-100 dark:hover:bg-red-900/40 transition shadow-sm"
+            >
+              <XCircle size={18} className="mr-2" />
+              Delete Account
             </button>
           </div>
         </div>

@@ -212,13 +212,26 @@ const Partners = () => {
 
   const handleDeletePartner = async (e, id) => {
     e.stopPropagation();
-    if (window.confirm('Are you sure you want to delete/reject this delivery partner?')) {
+    if (window.confirm('Are you sure you want to delete/suspend this delivery partner?')) {
       try {
         await api.delete(`/users/${id}`);
-        setPartners(partners.filter(p => p._id !== id));
-        showToast('Delivery partner removed', 'success');
+        fetchData();
+        showToast('Partner scheduled for deletion', 'success');
       } catch (error) {
         showToast('Failed to remove partner', 'error');
+      }
+    }
+  };
+
+  const handleUndoDeletePartner = async (e, id) => {
+    e.stopPropagation();
+    if (window.confirm('Are you sure you want to restore this deleted partner?')) {
+      try {
+        await api.put(`/users/${id}/undo-delete`);
+        fetchData();
+        showToast('Partner restored successfully', 'success');
+      } catch (error) {
+        showToast(error.response?.data?.message || 'Failed to restore partner', 'error');
       }
     }
   };
@@ -381,23 +394,27 @@ const Partners = () => {
                       <div className="flex flex-wrap gap-2">
                         {partner.role !== 'admin' && (
                           <>
-                            <button 
-                              onClick={async (e) => {
-                                e.stopPropagation();
-                                if (!window.confirm('Are you sure you want to suspend this partner?')) return;
-                                try {
-                                  await api.put(`/users/${partner._id}`, { isSuspended: true });
-                                  fetchData();
-                                  showToast('Partner suspended', 'success');
-                                } catch (error) {
-                                  showToast('Failed to suspend', 'error');
-                                }
-                              }}
-                              className="px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap inline-block bg-gray-100 text-gray-700 dark:text-gray-300 hover:bg-red-50 dark:bg-red-900/20 hover:text-red-700 dark:text-red-400"
-                            >
-                              Suspend
-                            </button>
-                            <button onClick={(e) => handleDeletePartner(e, partner._id)} className="px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap inline-block bg-red-50 dark:bg-red-900/20 text-red-600 hover:bg-red-100">Delete</button>
+                              <button 
+                                onClick={async (e) => {
+                                  e.stopPropagation();
+                                  if (!window.confirm('Are you sure you want to suspend this partner?')) return;
+                                  try {
+                                    await api.put(`/users/${partner._id}`, { isSuspended: true });
+                                    fetchData();
+                                    showToast('Partner suspended', 'success');
+                                  } catch (error) {
+                                    showToast('Failed to suspend', 'error');
+                                  }
+                                }}
+                                className="px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap inline-block bg-gray-100 text-gray-700 dark:text-gray-300 hover:bg-red-50 dark:bg-red-900/20 hover:text-red-700 dark:text-red-400"
+                              >
+                                Suspend
+                              </button>
+                              {partner.accountStatus === 'deleted_by_admin' ? (
+                                <button onClick={(e) => handleUndoDeletePartner(e, partner._id)} className="px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap inline-block bg-blue-50 dark:bg-blue-900/20 text-blue-600 hover:bg-blue-100">Undo Delete</button>
+                              ) : (
+                                <button onClick={(e) => handleDeletePartner(e, partner._id)} className="px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap inline-block bg-red-50 dark:bg-red-900/20 text-red-600 hover:bg-red-100">Delete</button>
+                              )}
                           </>
                         )}
                       </div>
@@ -474,7 +491,11 @@ const Partners = () => {
                               Reactivate
                             </button>
                           )}
-                          <button onClick={(e) => handleDeletePartner(e, partner._id)} className="px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap inline-block bg-red-100 text-red-600 hover:bg-red-200">Delete</button>
+                          {partner.accountStatus === 'deleted_by_admin' ? (
+                            <button onClick={(e) => handleUndoDeletePartner(e, partner._id)} className="px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap inline-block bg-blue-50 dark:bg-blue-900/20 text-blue-600 hover:bg-blue-100">Undo Delete</button>
+                          ) : (
+                            <button onClick={(e) => handleDeletePartner(e, partner._id)} className="px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap inline-block bg-red-100 text-red-600 hover:bg-red-200">Delete</button>
+                          )}
                         </>
                       )}
                     </div>

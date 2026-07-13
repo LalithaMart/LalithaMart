@@ -132,6 +132,22 @@ const loginUser = async (req, res) => {
       res.status(403);
       throw new Error('Your account has been suspended');
     }
+    if (user.accountStatus === 'deleted_by_admin') {
+      res.status(403);
+      throw new Error('Your account has been deleted by an administrator.');
+    }
+    if (user.accountStatus === 'deleted_by_user') {
+      if (user.deletionScheduledFor && user.deletionScheduledFor > new Date()) {
+        return res.status(403).json({
+          requiresReactivation: true,
+          deletionScheduledFor: user.deletionScheduledFor,
+          message: 'Your account is scheduled for deletion. Do you want to reactivate it?'
+        });
+      } else {
+        res.status(403);
+        throw new Error('Your account has been permanently deleted.');
+      }
+    }
     
     const token = generateToken(res, user._id);
     res.json({
@@ -505,6 +521,57 @@ const verifySignupOtp = async (req, res) => {
   }
 };
 
+/**
+ * @desc    Reactivate user account
+ * @route   POST /api/auth/reactivate
+ * @access  Public
+ */
+const reactivateAccount = async (req, res) => {
+  const { loginId, password } = req.body;
+  const identifier = loginId || req.body.phone;
+
+  if (!identifier) {
+    res.status(400);
+    throw new Error('Please provide a phone number or email');
+  }
+
+  const user = await User.findOne({ 
+    $or: [
+      { phone: identifier },
+      { email: identifier.toLowerCase() }
+    ]
+  });
+
+  if (user && (await user.matchPassword(password))) {
+    if (user.accountStatus === 'deleted_by_user') {
+      user.accountStatus = 'active';
+      user.deletionScheduledFor = undefined;
+      await user.save();
+      
+      const token = generateToken(res, user._id);
+      res.json({
+        _id: user._id,
+        name: user.name,
+        phone: user.phone,
+        role: user.role,
+        customerId: user.customerId,
+        partnerId: user.partnerId,
+        customDeliveryFee: user.customDeliveryFee,
+        customFreeDeliveryCartValue: user.customFreeDeliveryCartValue,
+        customDeliveryEarning: user.customDeliveryEarning,
+        token,
+        message: 'Account successfully reactivated!'
+      });
+    } else {
+      res.status(400);
+      throw new Error('Account does not require reactivation.');
+    }
+  } else {
+    res.status(401);
+    throw new Error('Invalid phone number or password');
+  }
+};
+
 export {
   registerUser,
   sendSignupOtp,
@@ -514,4 +581,5 @@ export {
   verifyOtp,
   resetPassword,
   impersonateUser,
+  reactivateAccount,
 };

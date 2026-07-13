@@ -11,6 +11,7 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [reactivationData, setReactivationData] = useState(null);
   const navigate = useNavigate();
   const { setCredentials } = useAuthStore();
 
@@ -66,11 +67,71 @@ const Login = () => {
         navigate('/');
       }
     } catch (err) {
-      setError(err.response?.data?.message || 'Login failed');
+      if (err.response?.data?.requiresReactivation) {
+        setReactivationData({
+          loginId,
+          password,
+          date: new Date(err.response.data.deletionScheduledFor).toLocaleDateString()
+        });
+      } else {
+        setError(err.response?.data?.message || 'Login failed');
+      }
     } finally {
       setLoading(false);
     }
   };
+
+  const handleReactivate = async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const response = await api.post('/auth/reactivate', { 
+        loginId: reactivationData.loginId, 
+        password: reactivationData.password 
+      });
+      setCredentials(response.data, response.data.token);
+      if (response.data.role === 'admin') navigate('/admin');
+      else if (response.data.role === 'delivery') navigate('/delivery');
+      else navigate('/');
+    } catch (err) {
+      setError(err.response?.data?.message || 'Reactivation failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (reactivationData) {
+    return (
+      <div className="max-w-md mx-auto mt-16 bg-white dark:bg-dark-800 p-8 rounded-xl shadow-sm border border-gray-100 dark:border-dark-700 transition-colors text-center">
+        <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-4">Account Deactivated</h2>
+        <div className="bg-yellow-50 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 p-4 rounded-lg mb-6 text-sm text-left">
+          Your account is currently scheduled for permanent deletion on <strong>{reactivationData.date}</strong>. 
+          <br /><br />
+          You cannot place orders or access features until you reactivate it. Would you like to reactivate your account now?
+        </div>
+        
+        {error && <div className="bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 p-3 rounded-lg mb-6 text-sm">{error}</div>}
+
+        <div className="flex gap-4">
+          <button
+            onClick={() => { setReactivationData(null); setError(''); }}
+            className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition"
+            disabled={loading}
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleReactivate}
+            disabled={loading}
+            className="flex-1 px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition flex items-center justify-center"
+          >
+            {loading ? 'Reactivating...' : 'Reactivate'}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-md mx-auto mt-16 bg-white dark:bg-dark-800 p-8 rounded-xl shadow-sm border border-gray-100 dark:border-dark-700 transition-colors">
       <h2 className="text-2xl font-bold text-center text-gray-800 dark:text-white mb-8">Welcome Back</h2>

@@ -11,6 +11,22 @@ import StoreSettings from './models/StoreSettings.js';
 export const startCronJobs = () => {
   console.log('Cron jobs started...');
 
+  // Daily Account Purge (runs every midnight)
+  cron.schedule('0 0 * * *', async () => {
+    try {
+      console.log('Running daily account purge job...');
+      const now = new Date();
+      const result = await User.deleteMany({
+        deletionScheduledFor: { $lte: now }
+      });
+      if (result.deletedCount > 0) {
+        console.log(`Permanently deleted ${result.deletedCount} user accounts.`);
+      }
+    } catch (error) {
+      console.error('Error in daily account purge cron job:', error);
+    }
+  }, { timezone: 'Asia/Kolkata' });
+
   // Hourly Partner Reminder (runs every hour at minute 0)
   cron.schedule('0 * * * *', async () => {
     try {

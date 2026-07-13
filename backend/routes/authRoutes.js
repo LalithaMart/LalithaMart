@@ -8,6 +8,7 @@ import {
   verifyOtp,
   resetPassword,
   impersonateUser,
+  reactivateAccount,
 } from '../controllers/authController.js';
 import { protect, admin } from '../middleware/authMiddleware.js';
 
@@ -33,5 +34,6 @@ router.post('/forgot-password', asyncHandler(forgotPassword));
 router.post('/verify-otp', asyncHandler(verifyOtp));
 router.post('/reset-password', asyncHandler(resetPassword));
 router.post('/impersonate/:id', protect, admin, asyncHandler(impersonateUser));
+router.post('/reactivate', asyncHandler(reactivateAccount));
 
 export default router;

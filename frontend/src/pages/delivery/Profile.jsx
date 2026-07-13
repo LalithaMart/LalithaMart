@@ -2,13 +2,28 @@ import { useState, useEffect } from 'react';
 import { useAuthStore } from '../../store/authStore';
 import { useUIStore } from '../../store/uiStore';
 import api from '../../services/api';
-import { Phone, Mail, FileText, CheckCircle, ShieldCheck } from 'lucide-react';
+import { Phone, Mail, FileText, CheckCircle, ShieldCheck, XCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { fadeUp, staggerContainer } from '../../animations/variants';
+import { useNavigate } from 'react-router-dom';
 
 const DeliveryProfile = () => {
-  const { user, token, setCredentials } = useAuthStore();
+  const { user, token, setCredentials, logout } = useAuthStore();
   const { showToast } = useUIStore();
+  const navigate = useNavigate();
+  
+  const handleDeleteAccount = async () => {
+    if (window.confirm("Are you sure you want to delete your account? It will be permanently deleted in 30 days. You can reactivate it anytime before then by logging in.")) {
+      try {
+        await api.delete('/users/profile');
+        alert('Your account has been scheduled for deletion.');
+        logout();
+        navigate('/login');
+      } catch (err) {
+        alert(err.response?.data?.message || 'Failed to schedule account deletion');
+      }
+    }
+  };
   
   
   // We re-fetch to make sure we have the latest generated partnerId/email from the backend
@@ -117,6 +132,15 @@ const DeliveryProfile = () => {
             )}
           </div>
           <p className="text-xs font-bold text-gray-400 dark:text-gray-500 mt-4 text-center">To update your phone number or identity details, please contact Administrator.</p>
+          <div className="mt-8 flex justify-center">
+            <button 
+              onClick={handleDeleteAccount}
+              className="flex items-center text-red-500 bg-red-50 dark:bg-red-900/20 px-6 py-3 rounded-2xl font-bold hover:bg-red-100 dark:hover:bg-red-900/40 transition shadow-sm w-full sm:w-auto justify-center"
+            >
+              <XCircle size={18} className="mr-2" />
+              Delete Account
+            </button>
+          </div>
         </div>
 
       </motion.div>

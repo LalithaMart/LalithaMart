@@ -70,7 +70,7 @@ const ContactUs = lazyRetry(() => import('./pages/customer/ContactUs'));
 function App() {
   const { user, originalUser } = useAuthStore();
   const { socket, connect, disconnect } = useSocketStore();
-  const { setCredentials, token } = useAuthStore();
+  const { setCredentials, token, logout } = useAuthStore();
 
   useEffect(() => {
     if (user) {
@@ -88,10 +88,22 @@ function App() {
           setCredentials(updatedUser, token);
         }
       };
+      
+      const handleForceLogout = (data) => {
+        alert(data.message || 'You have been logged out.');
+        logout();
+        window.location.href = '/login';
+      };
+
       socket.on('user-updated', handleUserUpdated);
-      return () => socket.off('user-updated', handleUserUpdated);
+      socket.on('force-logout', handleForceLogout);
+      
+      return () => {
+        socket.off('user-updated', handleUserUpdated);
+        socket.off('force-logout', handleForceLogout);
+      };
     }
-  }, [socket, user, token, setCredentials]);
+  }, [socket, user, token, setCredentials, logout]);
 
   const isAdmin = user?.role === 'admin' || originalUser?.role === 'admin';
 

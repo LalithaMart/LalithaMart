@@ -6,6 +6,8 @@ import {
   getUserById,
   updateUser,
   deleteUser,
+  deleteUserProfile,
+  undoDeleteUser,
   approveUser,
   updateLiveLocation,
 } from '../controllers/userController.js';
@@ -25,10 +27,14 @@ router.route('/')
 
 router.route('/profile')
   .get(protect, asyncHandler(getUserProfile))
-  .put(protect, asyncHandler(updateUserProfile));
+  .put(protect, asyncHandler(updateUserProfile))
+  .delete(protect, asyncHandler(deleteUserProfile));
 
 router.route('/:id/approve')
   .put(protect, admin, asyncHandler(approveUser));
+
+router.route('/:id/undo-delete')
+  .put(protect, admin, asyncHandler(undoDeleteUser));
 
 router.route('/:id')
   .get(protect, admin, asyncHandler(getUserById))

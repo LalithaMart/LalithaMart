@@ -117,6 +117,14 @@ const userSchema = mongoose.Schema(
       inApp: { type: Boolean, default: true },
       email: { type: Boolean, default: false },
     },
+    accountStatus: {
+      type: String,
+      enum: ['active', 'deleted_by_user', 'deleted_by_admin'],
+      default: 'active'
+    },
+    deletionScheduledFor: {
+      type: Date
+    }
   },
   {
     timestamps: true,

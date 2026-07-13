@@ -51,10 +51,23 @@ const Customers = () => {
     if (window.confirm('Are you sure you want to delete this customer?')) {
       try {
         await api.delete(`/users/${id}`);
-        setCustomers(customers.filter(c => c._id !== id));
-        showToast('Customer deleted', 'success');
+        fetchData();
+        showToast('Customer scheduled for deletion', 'success');
       } catch (error) {
         showToast('Failed to delete customer', 'error');
+      }
+    }
+  };
+
+  const handleUndoDeleteCustomer = async (e, id) => {
+    e.stopPropagation();
+    if (window.confirm('Are you sure you want to restore this deleted customer?')) {
+      try {
+        await api.put(`/users/${id}/undo-delete`);
+        fetchData();
+        showToast('Customer restored successfully', 'success');
+      } catch (error) {
+        showToast(error.response?.data?.message || 'Failed to restore customer', 'error');
       }
     }
   };
@@ -196,12 +209,21 @@ const Customers = () => {
                         >
                           {customer.isBlocked ? 'Blocked' : 'Block'}
                         </button>
-                        <button 
-                          onClick={(e) => handleDeleteCustomer(e, customer._id)}
-                          className="px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap inline-block bg-red-50 dark:bg-red-900/20 text-red-600 hover:bg-red-100"
-                        >
-                          Delete
-                        </button>
+                        {customer.accountStatus === 'deleted_by_admin' ? (
+                          <button 
+                            onClick={(e) => handleUndoDeleteCustomer(e, customer._id)}
+                            className="px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap inline-block bg-blue-50 dark:bg-blue-900/20 text-blue-600 hover:bg-blue-100"
+                          >
+                            Undo Delete
+                          </button>
+                        ) : (
+                          <button 
+                            onClick={(e) => handleDeleteCustomer(e, customer._id)}
+                            className="px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap inline-block bg-red-50 dark:bg-red-900/20 text-red-600 hover:bg-red-100"
+                          >
+                            Delete
+                          </button>
+                        )}
                       </>
                     )}
                   </div>

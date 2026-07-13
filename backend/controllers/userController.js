@@ -235,7 +235,7 @@ const updateUser = async (req, res) => {
 };
 
 /**
- * @desc    Delete user
+ * @desc    Admin soft delete user
  * @route   DELETE /api/users/:id
  * @access  Private/Admin
  */
@@ -243,8 +243,64 @@ const deleteUser = async (req, res) => {
   const user = await User.findById(req.params.id);
 
   if (user) {
-    await User.deleteOne({ _id: user._id });
-    res.json({ message: 'User removed' });
+    user.accountStatus = 'deleted_by_admin';
+    const thirtyDaysFromNow = new Date();
+    thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
+    user.deletionScheduledFor = thirtyDaysFromNow;
+    await user.save();
+
+    // Force logout
+    import('../config/socket.js').then(({ getIO }) => {
+      getIO().to(user._id.toString()).emit('force-logout', { message: 'Your account has been deleted by an administrator.' });
+    }).catch(err => console.error('Socket emit error:', err));
+
+    res.json({ message: 'User scheduled for deletion (Admin)' });
+  } else {
+    res.status(404);
+    throw new Error('User not found');
+  }
+};
+
+/**
+ * @desc    User self soft delete
+ * @route   DELETE /api/users/profile
+ * @access  Private
+ */
+const deleteUserProfile = async (req, res) => {
+  const user = await User.findById(req.user._id);
+
+  if (user) {
+    user.accountStatus = 'deleted_by_user';
+    const thirtyDaysFromNow = new Date();
+    thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
+    user.deletionScheduledFor = thirtyDaysFromNow;
+    await user.save();
+
+    res.json({ message: 'Your account has been scheduled for deletion.' });
+  } else {
+    res.status(404);
+    throw new Error('User not found');
+  }
+};
+
+/**
+ * @desc    Admin undo delete
+ * @route   PUT /api/users/:id/undo-delete
+ * @access  Private/Admin
+ */
+const undoDeleteUser = async (req, res) => {
+  const user = await User.findById(req.params.id);
+
+  if (user) {
+    if (user.accountStatus === 'deleted_by_admin') {
+      user.accountStatus = 'active';
+      user.deletionScheduledFor = undefined;
+      const updatedUser = await user.save();
+      res.json({ message: 'Account deletion reversed successfully.', user: updatedUser });
+    } else {
+      res.status(400);
+      throw new Error('This account was not deleted by an admin.');
+    }
   } else {
     res.status(404);
     throw new Error('User not found');
@@ -311,6 +367,8 @@ export {
   getUserById,
   updateUser,
   deleteUser,
+  deleteUserProfile,
+  undoDeleteUser,
   approveUser,
   updateLiveLocation,
 };
