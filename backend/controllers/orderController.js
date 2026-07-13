@@ -14,9 +14,9 @@ import Notification from '../models/Notification.js';
  * @access  Private
  */
 const addOrderItems = async (req, res) => {
-  if (req.user.isBlocked) {
+  if (req.user.isBlocked || req.user.isSuspended || req.user.accountStatus === 'deleted_by_admin' || req.user.accountStatus === 'deleted_by_user') {
     res.status(403);
-    throw new Error('Your account is blocked. You cannot place orders.');
+    throw new Error('Your account is blocked or restricted. You cannot place orders.');
   }
 
   const { orderItems, deliveryAddress, paymentMethod } = req.body;
@@ -362,6 +362,12 @@ const assignDeliveryPartner = async (req, res) => {
       res.status(400);
       throw new Error('Invalid delivery partner');
     }
+    
+    if (partner.isBlocked || partner.isSuspended || partner.accountStatus === 'deleted_by_admin' || partner.accountStatus === 'deleted_by_user') {
+      res.status(403);
+      throw new Error('Delivery partner is blocked or restricted and cannot be assigned orders.');
+    }
+
     if (!partner.isAvailable) {
       res.status(400);
       throw new Error('Delivery partner is currently offline and cannot be assigned.');

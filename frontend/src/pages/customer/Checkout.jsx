@@ -427,11 +427,11 @@ const Checkout = () => {
             
             <button 
               onClick={handlePlaceOrder}
-              disabled={!selectedAddress}
+              disabled={!selectedAddress || user?.isBlocked || user?.isSuspended || user?.accountStatus === 'deleted_by_admin' || user?.accountStatus === 'deleted_by_user'}
               className={`w-full py-4 rounded-2xl font-black text-lg flex items-center justify-center transition-all duration-300
-                ${selectedAddress ? 'bg-primary-600 text-white hover:bg-primary-500 shadow-lg shadow-primary-500/30' : 'bg-gray-200 dark:bg-dark-700 text-gray-400 dark:text-gray-500 cursor-not-allowed border border-gray-300 dark:border-dark-600'}`}
+                ${(selectedAddress && !(user?.isBlocked || user?.isSuspended || user?.accountStatus === 'deleted_by_admin' || user?.accountStatus === 'deleted_by_user')) ? 'bg-primary-600 text-white hover:bg-primary-500 shadow-lg shadow-primary-500/30' : 'bg-gray-200 dark:bg-dark-700 text-gray-400 dark:text-gray-500 cursor-not-allowed border border-gray-300 dark:border-dark-600'}`}
             >
-              Place Order Now
+              {(user?.isBlocked || user?.isSuspended || user?.accountStatus === 'deleted_by_admin' || user?.accountStatus === 'deleted_by_user') ? 'Account Restricted' : 'Place Order Now'}
             </button>
           </div>
         </motion.div>

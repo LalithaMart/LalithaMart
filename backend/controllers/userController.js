@@ -186,6 +186,9 @@ const updateUser = async (req, res) => {
     user.role = req.body.role || user.role;
     if (req.body.email !== undefined) user.email = req.body.email;
     if (req.body.verifiedId !== undefined) user.verifiedId = req.body.verifiedId;
+    const wasBlocked = user.isBlocked;
+    const wasSuspended = user.isSuspended;
+
     if (req.body.isBlocked !== undefined) user.isBlocked = req.body.isBlocked;
     if (req.body.isSuspended !== undefined) user.isSuspended = req.body.isSuspended;
     
@@ -197,6 +200,20 @@ const updateUser = async (req, res) => {
     const updatedUser = await user.save();
     
     const { getIO } = await import('../config/socket.js');
+    const io = getIO();
+    
+    if ((req.body.isBlocked && !wasBlocked) || (req.body.isSuspended && !wasSuspended)) {
+      const Notification = (await import('../models/Notification.js')).default;
+      const notif = await Notification.create({
+        title: 'Account Restricted',
+        message: 'Your account is deleted / blocked and you cant use the site. Contact for support.',
+        type: 'System',
+        userId: updatedUser._id,
+        targetRole: 'specific',
+        link: '/contact'
+      });
+      io.to(updatedUser._id.toString()).emit('new-notification', notif);
+    }
     getIO().to(updatedUser._id.toString()).emit('user-updated', {
       _id: updatedUser._id,
       name: updatedUser.name,
@@ -249,9 +266,19 @@ const deleteUser = async (req, res) => {
     user.deletionScheduledFor = thirtyDaysFromNow;
     await user.save();
 
-    // Force logout
+    const Notification = (await import('../models/Notification.js')).default;
+    const notif = await Notification.create({
+      title: 'Account Deleted',
+      message: 'Your account is deleted / blocked and you cant use the site. Contact for support.',
+      type: 'System',
+      userId: user._id,
+      targetRole: 'specific',
+      link: '/contact'
+    });
+
     import('../config/socket.js').then(({ getIO }) => {
-      getIO().to(user._id.toString()).emit('force-logout', { message: 'Your account has been deleted by an administrator.' });
+      getIO().to(user._id.toString()).emit('new-notification', notif);
+      getIO().to(user._id.toString()).emit('user-updated', { ...user.toObject(), accountStatus: 'deleted_by_admin' });
     }).catch(err => console.error('Socket emit error:', err));
 
     res.json({ message: 'User scheduled for deletion (Admin)' });

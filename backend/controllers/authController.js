@@ -124,18 +124,6 @@ const loginUser = async (req, res) => {
       res.status(403);
       throw new Error('Your account is pending admin approval');
     }
-    if (user.isBlocked) {
-      res.status(403);
-      throw new Error('Your account has been blocked');
-    }
-    if (user.isSuspended) {
-      res.status(403);
-      throw new Error('Your account has been suspended');
-    }
-    if (user.accountStatus === 'deleted_by_admin') {
-      res.status(403);
-      throw new Error('Your account has been deleted by an administrator.');
-    }
     if (user.accountStatus === 'deleted_by_user') {
       if (user.deletionScheduledFor && user.deletionScheduledFor > new Date()) {
         return res.status(403).json({
