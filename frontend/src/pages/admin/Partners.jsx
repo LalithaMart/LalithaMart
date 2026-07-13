@@ -628,7 +628,9 @@ const Partners = () => {
                     <div className="flex flex-wrap gap-2">
                       {partner.role !== 'admin' && (
                         <>
-                            <button onClick={(e) => handleUndoDeletePartner(e, partner._id)} className="px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap inline-block bg-blue-50 dark:bg-blue-900/20 text-blue-600 hover:bg-blue-100">Undo Delete</button>
+                            {partner.accountStatus === 'deleted_by_admin' && (
+                              <button onClick={(e) => handleUndoDeletePartner(e, partner._id)} className="px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap inline-block bg-blue-50 dark:bg-blue-900/20 text-blue-600 hover:bg-blue-100">Undo Delete</button>
+                            )}
                         </>
                       )}
                     </div>

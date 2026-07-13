@@ -15,8 +15,32 @@ const Register = ({ targetRole = 'customer' }) => {
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState(1);
   const [otp, setOtp] = useState('');
+  const [timeLeft, setTimeLeft] = useState(0);
   const navigate = useNavigate();
   const { setCredentials } = useAuthStore();
+
+  useEffect(() => {
+    if (timeLeft > 0) {
+      const timerId = setTimeout(() => setTimeLeft(timeLeft - 1), 1000);
+      return () => clearTimeout(timerId);
+    }
+  }, [timeLeft]);
+
+  const handleResendOtp = async () => {
+    if (timeLeft > 0) return;
+    setLoading(true);
+    setError('');
+    try {
+      const payload = { name, phone, email: email.trim(), password, role: targetRole };
+      const response = await api.post('/auth/send-signup-otp', payload);
+      setSuccess(response.data.message || 'OTP resent to your email.');
+      setTimeLeft(60);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to resend OTP');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -37,6 +61,7 @@ const Register = ({ targetRole = 'customer' }) => {
         const response = await api.post('/auth/send-signup-otp', payload);
         setSuccess(response.data.message || 'OTP sent to your email.');
         setStep(2);
+        setTimeLeft(60);
         setLoading(false);
       } else {
         // Step 2: Verify OTP
@@ -173,20 +198,30 @@ const Register = ({ targetRole = 'customer' }) => {
               onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
             />
           </div>
-          <button
-            type="submit"
-            disabled={loading || otp.length !== 6}
-            className="w-full bg-primary-600 text-white py-2.5 rounded-lg font-medium hover:bg-primary-700 transition disabled:opacity-70 mt-2"
-          >
-            {loading ? 'Verifying...' : 'Verify & Create Account'}
-          </button>
-          <button
-            type="button"
-            onClick={() => { setStep(1); setSuccess(''); setError(''); }}
-            className="w-full bg-gray-100 dark:bg-dark-700 text-gray-700 dark:text-gray-300 py-2.5 rounded-lg font-medium hover:bg-gray-200 dark:hover:bg-dark-600 transition mt-2"
-          >
-            Back
-          </button>
+          <div className="flex flex-col gap-2 mt-2">
+            <button
+              type="submit"
+              disabled={loading || otp.length !== 6}
+              className="w-full bg-primary-600 text-white py-2.5 rounded-lg font-medium hover:bg-primary-700 transition disabled:opacity-70"
+            >
+              {loading ? 'Verifying...' : 'Verify & Create Account'}
+            </button>
+            <button
+              type="button"
+              onClick={handleResendOtp}
+              disabled={loading || timeLeft > 0}
+              className="w-full bg-white dark:bg-dark-800 border-2 border-primary-100 dark:border-primary-900/30 text-primary-600 dark:text-primary-400 py-2.5 rounded-lg font-medium hover:bg-primary-50 dark:hover:bg-dark-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            >
+              {timeLeft > 0 ? `Resend OTP in ${timeLeft}s` : 'Resend OTP'}
+            </button>
+            <button
+              type="button"
+              onClick={() => { setStep(1); setSuccess(''); setError(''); setTimeLeft(0); }}
+              className="w-full bg-gray-100 dark:bg-dark-700 text-gray-700 dark:text-gray-300 py-2.5 rounded-lg font-medium hover:bg-gray-200 dark:hover:bg-dark-600 transition"
+            >
+              Back
+            </button>
+          </div>
         </form>
       )}
 
