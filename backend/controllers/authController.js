@@ -206,11 +206,16 @@ const forgotPassword = async (req, res) => {
   // Nodemailer Integration
   try {
     const transporter = nodemailer.createTransport({
-      service: 'gmail',
+      host: 'smtp.gmail.com',
+      port: 587,
+      secure: false,
       auth: {
         user: process.env.SMTP_USER,
         pass: process.env.SMTP_PASS,
       },
+      tls: {
+        rejectUnauthorized: false
+      }
     });
 
     const mailOptions = {
@@ -390,11 +395,16 @@ const sendSignupOtp = async (req, res) => {
   // Send Email
   try {
     const transporter = nodemailer.createTransport({
-      service: 'gmail',
+      host: 'smtp.gmail.com',
+      port: 587,
+      secure: false,
       auth: {
         user: process.env.SMTP_USER,
         pass: process.env.SMTP_PASS,
       },
+      tls: {
+        rejectUnauthorized: false
+      }
     });
 
     const mailOptions = {
@@ -420,7 +430,7 @@ const sendSignupOtp = async (req, res) => {
   } catch (err) {
     console.error('Failed to send signup email:', err);
     res.status(500);
-    throw new Error('Failed to send OTP email. Please try again.');
+    throw new Error('Failed to send OTP email: ' + (err.message || 'Unknown error'));
   }
 };
 
