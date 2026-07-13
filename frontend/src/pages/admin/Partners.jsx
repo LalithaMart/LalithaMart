@@ -258,8 +258,14 @@ const Partners = () => {
   });
   
   const pendingPartners = sortedPartners.filter(p => !p.isApproved);
-  const activePartners = sortedPartners.filter(p => p.isApproved && !p.isSuspended && p.isAvailable && (filterStatus === 'all' || filterStatus === 'active'));
-  const inactivePartners = sortedPartners.filter(p => p.isApproved && (p.isSuspended || !p.isAvailable) && (filterStatus === 'all' || filterStatus === 'inactive'));
+  
+  const isBlocked = (p) => p.isSuspended || p.isBlocked;
+  const isDeleted = (p) => p.accountStatus === 'deleted_by_admin' || p.accountStatus === 'deleted_by_user';
+  
+  const activePartners = sortedPartners.filter(p => p.isApproved && !isBlocked(p) && !isDeleted(p) && p.isAvailable && (filterStatus === 'all' || filterStatus === 'active'));
+  const inactivePartners = sortedPartners.filter(p => p.isApproved && !isBlocked(p) && !isDeleted(p) && !p.isAvailable && (filterStatus === 'all' || filterStatus === 'inactive'));
+  const blockedPartners = sortedPartners.filter(p => p.isApproved && isBlocked(p) && !isDeleted(p) && (filterStatus === 'all' || filterStatus === 'blocked'));
+  const deletedPartners = sortedPartners.filter(p => p.isApproved && isDeleted(p) && (filterStatus === 'all' || filterStatus === 'deleted'));
 
   const activeOrder = partnerDeliveries.find(o => o.status === 'Out for Delivery');
   const activeDestination = activeOrder ? activeOrder.deliveryAddress?.location : null;
@@ -288,6 +294,8 @@ const Partners = () => {
             <option value="all">All Partners</option>
             <option value="active">Active/Online</option>
             <option value="inactive">Inactive/Offline</option>
+            <option value="blocked">Blocked / Suspended</option>
+            <option value="deleted">Deleted</option>
           </select>
           <button
             onClick={() => setShowForm(true)}
@@ -425,6 +433,127 @@ const Partners = () => {
               })}
             </div>
           )}
+        </div>
+      )}
+
+      {(filterStatus === 'all' || filterStatus === 'blocked') && (
+        <div className="mt-8">
+          <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-4">Blocked / Suspended Partners</h3>
+          {blockedPartners.length === 0 ? (
+            <p className="text-gray-500 dark:text-gray-400 text-sm">No blocked or suspended partners found.</p>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {blockedPartners.map((partner) => {
+              const completedDeliveries = allOrders.filter(o => o.deliveryPartner?._id === partner._id && o.status === 'Completed').length;
+              return (
+              <div 
+                key={partner._id} 
+                className="bg-orange-50 dark:bg-orange-900/20 rounded-xl shadow-sm border dark:border-dark-600 bg-white dark:bg-dark-900 text-gray-900 dark:text-white border-orange-200 dark:border-orange-900/30 overflow-hidden cursor-pointer hover:border-orange-300 transition"
+                onClick={() => handlePartnerClick(partner)}
+              >
+                <div className="p-6">
+                  <div className="flex justify-between items-start mb-4">
+                    <div className="flex items-center space-x-3 min-w-0 flex-1 mr-2">
+                      <div className="h-10 w-10 shrink-0 rounded-full bg-orange-200 text-orange-700 dark:text-orange-400 flex items-center justify-center font-bold">
+                        {partner.name.charAt(0)}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <h3 className="font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2 truncate">
+                          <span className="truncate">{partner.name}</span>
+                        </h3>
+                        {partner.partnerId && <p className="text-xs text-gray-400 font-mono mt-0.5">{partner.partnerId}</p>}
+                        <p className="text-sm text-gray-500 dark:text-gray-400 truncate">{partner.phone}</p>
+                      </div>
+                    </div>
+                    <span className="flex items-center text-xs font-medium text-orange-600 bg-orange-50 dark:bg-orange-900/20 px-2 py-1 rounded-full">
+                      <XCircle size={14} className="mr-1" /> {partner.isSuspended ? 'Suspended' : 'Blocked'}
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap justify-between items-center text-sm border-t border-gray-100 dark:border-dark-700 pt-4 mt-2 gap-2">
+                    <span className="text-gray-500 dark:text-gray-400">Deliveries: <span className="font-bold text-gray-800 dark:text-gray-100">{completedDeliveries}</span></span>
+                    <div className="flex flex-wrap gap-2">
+                      {partner.role !== 'admin' && (
+                        <>
+                            <button 
+                              onClick={async (e) => {
+                                e.stopPropagation();
+                                if (!window.confirm('Are you sure you want to unsuspend this partner?')) return;
+                                try {
+                                  await api.put(`/users/${partner._id}`, { isSuspended: false });
+                                  fetchData();
+                                  showToast('Partner unsuspended', 'success');
+                                } catch (error) {
+                                  showToast('Failed to unsuspend', 'error');
+                                }
+                              }}
+                              className="px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap inline-block bg-green-50 dark:bg-green-900/20 text-green-600 hover:bg-green-100"
+                            >
+                              Unsuspend
+                            </button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              );
+            })}
+          </div>
+        )}
+        </div>
+      )}
+
+      {(filterStatus === 'all' || filterStatus === 'deleted') && (
+        <div className="mt-8">
+          <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-4">Deleted Partners</h3>
+          {deletedPartners.length === 0 ? (
+            <p className="text-gray-500 dark:text-gray-400 text-sm">No deleted partners found.</p>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {deletedPartners.map((partner) => {
+              const completedDeliveries = allOrders.filter(o => o.deliveryPartner?._id === partner._id && o.status === 'Completed').length;
+              return (
+              <div 
+                key={partner._id} 
+                className="bg-red-50 dark:bg-red-900/20 rounded-xl shadow-sm border dark:border-dark-600 bg-white dark:bg-dark-900 text-gray-900 dark:text-white border-red-200 dark:border-red-900/30 overflow-hidden cursor-pointer hover:border-red-300 transition"
+                onClick={() => handlePartnerClick(partner)}
+              >
+                <div className="p-6">
+                  <div className="flex justify-between items-start mb-4">
+                    <div className="flex items-center space-x-3 min-w-0 flex-1 mr-2">
+                      <div className="h-10 w-10 shrink-0 rounded-full bg-red-200 text-red-700 dark:text-red-400 flex items-center justify-center font-bold">
+                        {partner.name.charAt(0)}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <h3 className="font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2 truncate">
+                          <span className="truncate">{partner.name}</span>
+                        </h3>
+                        {partner.partnerId && <p className="text-xs text-gray-400 font-mono mt-0.5">{partner.partnerId}</p>}
+                        <p className="text-sm text-gray-500 dark:text-gray-400 truncate">{partner.phone}</p>
+                      </div>
+                    </div>
+                    <span className="flex items-center text-xs font-medium text-red-600 bg-red-50 dark:bg-red-900/20 px-2 py-1 rounded-full">
+                      <XCircle size={14} className="mr-1" /> Deleted
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap justify-between items-center text-sm border-t border-gray-100 dark:border-dark-700 pt-4 mt-2 gap-2">
+                    <span className="text-gray-500 dark:text-gray-400">Deliveries: <span className="font-bold text-gray-800 dark:text-gray-100">{completedDeliveries}</span></span>
+                    <div className="flex flex-wrap gap-2">
+                      {partner.role !== 'admin' && (
+                        <>
+                            {partner.accountStatus === 'deleted_by_admin' && (
+                              <button onClick={(e) => handleUndoDeletePartner(e, partner._id)} className="px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap inline-block bg-blue-50 dark:bg-blue-900/20 text-blue-600 hover:bg-blue-100">Undo Delete</button>
+                            )}
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              );
+            })}
+          </div>
+        )}
         </div>
       )}
 

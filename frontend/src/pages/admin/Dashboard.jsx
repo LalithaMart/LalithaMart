@@ -719,10 +719,10 @@ const AdminDashboard = () => {
                   >
                     <option value="">Select Partner</option>
                     <optgroup label="Online (Available)">
-                      {deliveryPartners.filter(p => p.isAvailable && !p.isSuspended).length === 0 ? (
+                      {deliveryPartners.filter(p => p.isAvailable && !p.isBlocked && !p.isSuspended && p.accountStatus !== 'deleted_by_admin' && p.accountStatus !== 'deleted_by_user').length === 0 ? (
                          <option disabled>No partners are currently available</option>
                       ) : (
-                        deliveryPartners.filter(p => p.isAvailable && !p.isSuspended).map(partner => {
+                        deliveryPartners.filter(p => p.isAvailable && !p.isBlocked && !p.isSuspended && p.accountStatus !== 'deleted_by_admin' && p.accountStatus !== 'deleted_by_user').map(partner => {
                           const hasCancelled = selectedOrder.cancelledBy && selectedOrder.cancelledBy.includes(partner._id);
                           const isOutForDelivery = partner.isOutForDelivery || orders.some(o => o.status === 'Out for Delivery' && o.deliveryPartner?._id === partner._id);
                           const isDisabled = hasCancelled || isOutForDelivery;

@@ -74,6 +74,7 @@ const Customers = () => {
 
   const [showAddForm, setShowAddForm] = useState(false);
   const [newCustomer, setNewCustomer] = useState({ name: '', phone: '', password: '' });
+  const [filterStatus, setFilterStatus] = useState('all');
 
   const handleAddCustomer = async (e) => {
     e.preventDefault();
@@ -88,7 +89,18 @@ const Customers = () => {
     }
   };
 
-  const filteredCustomers = customers.filter(c => c.name.toLowerCase().includes(searchTerm.toLowerCase()) || c.phone.includes(searchTerm));
+  const filteredCustomers = customers.filter(c => {
+    const matchesSearch = c.name.toLowerCase().includes(searchTerm.toLowerCase()) || c.phone.includes(searchTerm);
+    if (!matchesSearch) return false;
+    
+    if (filterStatus === 'all') return true;
+    if (filterStatus === 'active') return !c.isBlocked && !c.isSuspended && c.accountStatus !== 'deleted_by_admin' && c.accountStatus !== 'deleted_by_user';
+    if (filterStatus === 'blocked') return c.isBlocked || c.isSuspended;
+    if (filterStatus === 'deleted') return c.accountStatus === 'deleted_by_admin' || c.accountStatus === 'deleted_by_user';
+    
+    return true;
+  });
+  
   const sortedCustomers = [...filteredCustomers].sort((a, b) => {
     const idA = a.customerId || '';
     const idB = b.customerId || '';
@@ -111,6 +123,16 @@ const Customers = () => {
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
+          <select
+            value={filterStatus}
+            onChange={(e) => setFilterStatus(e.target.value)}
+            className="px-4 py-2 border border-gray-300 dark:border-dark-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none bg-white dark:bg-dark-800"
+          >
+            <option value="all">All Customers</option>
+            <option value="active">Active</option>
+            <option value="blocked">Blocked / Suspended</option>
+            <option value="deleted">Deleted</option>
+          </select>
           <button onClick={() => setShowAddForm(true)} className="bg-primary-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-primary-700">
             Add Customer
           </button>
