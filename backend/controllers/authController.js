@@ -209,6 +209,7 @@ const forgotPassword = async (req, res) => {
       host: 'smtp.gmail.com',
       port: 465,
       secure: true,
+      family: 4, // Force IPv4 to prevent ENETUNREACH on serverless IPv6
       auth: {
         user: process.env.SMTP_USER,
         pass: process.env.SMTP_PASS,
@@ -400,6 +401,7 @@ const sendSignupOtp = async (req, res) => {
       host: 'smtp.gmail.com',
       port: 465,
       secure: true,
+      family: 4, // Force IPv4 to prevent ENETUNREACH on serverless IPv6
       auth: {
         user: process.env.SMTP_USER,
         pass: process.env.SMTP_PASS,
